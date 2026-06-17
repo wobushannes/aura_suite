@@ -1,0 +1,8 @@
+{
+  "name": "CMS, WaWi, Blog, Shop",
+  "description": "Ein professionelles, offline-fähiges CMS-System mit Admin-Dashboard, Kundenverwaltung, Dateiuploads für Verträge und Videos, sowie direktem Nachrichtenaustausch im Chat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

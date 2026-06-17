@@ -1,0 +1,460 @@
+{
+  "customers": [
+    {
+      "id": "cust-max",
+      "name": "Max Mustermann",
+      "company": "Muster GmbH",
+      "email": "max@muster.de",
+      "phone": "+49 123 456789",
+      "address": "Musterstraße 1, 80331 München",
+      "status": "Stammkunde",
+      "username": "max.muster",
+      "passwordHash": "fc46231ef64c5be7f0580970877990159f8a379373bd33e46c7ad7208d2b2707",
+      "notes": "Stammkunde seit 2024. Sehr interessiert an neuen KI-Consulting-Formaten und monatlichen Videoberichten.",
+      "createdAt": "2026-01-10T12:00:00.000Z",
+      "activePhase": 3
+    },
+    {
+      "id": "cust-anna",
+      "name": "Anna Schmidt",
+      "company": "Schmidt AG",
+      "email": "anna@schmidt.de",
+      "phone": "+49 987 654321",
+      "address": "Hauptstraße 15, 80335 München",
+      "status": "Neukunde",
+      "username": "anna.schmidt",
+      "passwordHash": "fc46231ef64c5be7f0580970877990159f8a379373bd33e46c7ad7208d2b2707",
+      "notes": "Neuzugang aus Empfehlung. Sucht administrative Beratung für Videomarketing-Verträge.",
+      "createdAt": "2026-05-15T09:30:00.000Z",
+      "activePhase": 1
+    },
+    {
+      "id": "cust-tom",
+      "name": "Tom Weber",
+      "company": "Weber Solutions",
+      "email": "tom@weber.de",
+      "phone": "+49 555 123456",
+      "address": "Bahnhofsplatz 5, 80335 München",
+      "status": "Aktiv",
+      "username": "tom.weber",
+      "passwordHash": "fc46231ef64c5be7f0580970877990159f8a379373bd33e46c7ad7208d2b2707",
+      "notes": "Technologiepartner und Beratungskunde. Reicht monatlich Berichte und Verträge ein.",
+      "createdAt": "2026-03-22T14:45:00.000Z",
+      "activePhase": 4
+    }
+  ],
+  "files": [
+    {
+      "id": "file-1",
+      "customerId": "cust-max",
+      "customerName": "Max Mustermann",
+      "name": "Kooperationsvertrag_2026_MusterGmbH.pdf",
+      "type": "application/pdf",
+      "size": 1048576,
+      "category": "Vertrag",
+      "uploadDate": "2026-05-20T10:15:30.000Z",
+      "status": "Genehmigt",
+      "adminNote": "Vertrag wurde geprüft und entspricht den Richtlinien. Kopie unterschrieben im Portal hinterlegt."
+    },
+    {
+      "id": "file-2",
+      "customerId": "cust-max",
+      "customerName": "Max Mustermann",
+      "name": "Vorstellungsvideo_MusterGmbH_HQ.mp4",
+      "type": "video/mp4",
+      "size": 47185920,
+      "category": "Video",
+      "uploadDate": "2026-05-24T16:20:00.000Z",
+      "status": "In Bearbeitung",
+      "adminNote": "Video-Schnitt-Feedback wird vorbereitet."
+    },
+    {
+      "id": "file-3",
+      "customerId": "cust-tom",
+      "customerName": "Tom Weber",
+      "name": "Umsatzbericht_Q1_WeberSolutions.xlsx",
+      "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "size": 154850,
+      "category": "Datei",
+      "uploadDate": "2026-05-28T11:05:00.000Z",
+      "status": "Eingereicht"
+    },
+    {
+      "id": "file-4",
+      "customerId": "cust-anna",
+      "customerName": "Anna Schmidt",
+      "name": "Angebotsentwurf_Marketingkampagne.pdf",
+      "type": "application/pdf",
+      "size": 2048576,
+      "category": "Vertrag",
+      "uploadDate": "2026-05-29T14:00:00.000Z",
+      "status": "Eingereicht"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-1",
+      "senderId": "admin",
+      "receiverId": "cust-max",
+      "content": "Hallo Herr Mustermann, willkommen in Ihrem neuen Kundenportal! Hier können Sie wie besprochen alle Verträge und Projektvideos hochladen.",
+      "timestamp": "2026-05-20T08:30:00.000Z",
+      "isRead": true
+    },
+    {
+      "id": "msg-2",
+      "senderId": "cust-max",
+      "receiverId": "admin",
+      "content": "Hallo Frau Kraft, das sieht wirklich fantastisch und sehr übersichtlich aus! Ich habe direkt den unterschriebenen Kooperationsvertrag und das neue Vorstellungsvideo hochgeladen.",
+      "timestamp": "2026-05-20T10:20:00.000Z",
+      "isRead": true
+    },
+    {
+      "id": "msg-3",
+      "senderId": "admin",
+      "receiverId": "cust-max",
+      "content": "Wunderbar! Den Kooperationsvertrag habe ich soeben bereits als genehmigt markiert. Wir prüfen morgen direkt das Vorstellungsvideo und senden Ihnen unser detailliertes Feedback hier im Chat.",
+      "timestamp": "2026-05-20T11:05:00.000Z",
+      "isRead": true
+    },
+    {
+      "id": "msg-4",
+      "senderId": "cust-max",
+      "receiverId": "admin",
+      "content": "Super, vielen Dank für die extrem schnelle Bearbeitung! Ich freue mich auf die Rückmeldung zum Video.",
+      "timestamp": "2026-05-20T11:15:00.000Z",
+      "isRead": true
+    },
+    {
+      "id": "msg-5",
+      "senderId": "cust-tom",
+      "receiverId": "admin",
+      "content": "Hallo, ich habe unseren aktuellen Umsatzbericht für Q1 hochgeladen. Könnten wir dazu nächste Woche kurz sprechen?",
+      "timestamp": "2026-05-28T11:10:00.000Z",
+      "isRead": false
+    }
+  ],
+  "appointments": [
+    {
+      "id": "appt-1",
+      "title": "Vertrags-Review Muster GmbH",
+      "date": "2026-06-02",
+      "time": "10:00",
+      "description": "Abschlussbesprechung der neuen Kooperationsvereinbarung",
+      "customerId": "cust-max"
+    },
+    {
+      "id": "appt-2",
+      "title": "Umsatzbericht-Analyse Weber Solutions",
+      "date": "2026-06-03",
+      "time": "14:30",
+      "description": "Gemeinsame Analyse der Q1-Kennzahlen im Online-Meeting",
+      "customerId": "cust-tom"
+    },
+    {
+      "id": "appt-3",
+      "title": "Onboarding-Gespräch Schmidt AG",
+      "date": "2026-06-05",
+      "time": "09:00",
+      "description": "Erstes Onboarding und Bedarfsanalyse für Marketingverträge",
+      "customerId": "cust-anna"
+    }
+  ],
+  "botRules": [
+    {
+      "id": "rule-preise",
+      "triggerKeywords": [
+        "preis",
+        "preise",
+        "kosten",
+        "honorar",
+        "angebot",
+        "günstig",
+        "teuer",
+        "geld",
+        "zahlen",
+        "provision",
+        "courtage"
+      ],
+      "answer": "Als freie Versicherungsmaklerin erfolgt unsere Beratung für Sie in der Regel kostenfrei, da wir durch marktübliche Courtagen der Gesellschaften vergütet werden. Im Bereich Baufinanzierung vergleichen wir Angebote von über 450 Banken provisionsneutral für Sie. Bei reinen Unternehmens-Consultings und aufwendigen Social-Media / Video-Marketingprojekten vereinbaren wir im Voraus ein transparentes Festhonorar. Ihr Erstgespräch (Phase 1) ist in jedem Fall 100% kostenfrei!",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-videos",
+      "triggerKeywords": [
+        "video",
+        "videos",
+        "schnitt",
+        "rendering",
+        "sound",
+        "mp4",
+        "bearbeitung",
+        "cutter",
+        "marketing",
+        "social",
+        "instagram",
+        "tiktok"
+      ],
+      "answer": "Für Ihr Social-Media Recruiting oder die Kundenakquise bearbeiten unsere Experten Ihre eingereichten Rohvideos (z.B. Kurzclips oder Firmenporträts). Laden Sie Ihr Material einfach im Register 'Dokumente' hoch. Unsere Cutter kümmern sich um Audio-Abmischung, professionelle Untertitel, Color Grading und Effekte. Das fertige Ergebnis stellen wir Ihnen im Portal zur Freigabe bereit.",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-dgm",
+      "triggerKeywords": [
+        "vertrag",
+        "unterschrift",
+        "unterschreiben",
+        "signieren",
+        "signatur",
+        "dgm",
+        "rechtskräftig",
+        "freigabe",
+        "vollmacht",
+        "maklervertrag"
+      ],
+      "answer": "Über unser integriertes DGM (Dezentrales Dispositions-Signaturverfahren) können Sie Verträge, die Maklervollmacht oder Angebote absolut rechtssicher und digital im Portal signieren. Klicken Sie neben dem Dokument auf 'Signieren', verifizieren Sie Ihre Daten per SMS-/E-Mail-Pin und zeichnen Sie das Dokument digital ab. Das spart lästige Postwege und beschleunigt Ihren Versicherungsschutz!",
+      "usagesCount": 0,
+      "lastEditedBy": "System"
+    },
+    {
+      "id": "rule-termine",
+      "triggerKeywords": [
+        "termin",
+        "kalender",
+        "meeting",
+        "treffen",
+        "buchung",
+        "buchen",
+        "uhrzeit",
+        "datum",
+        "online",
+        "videochat",
+        "beratung"
+      ],
+      "answer": "Einen persönlichen Beratungstermin – ob als Videochat oder direkt vor Ort im Büro – buchen Sie bequem im Bereich 'Termine' links. Wählen Sie Ihr Anliegen (z.B. Vorsorge-Checkup, Gewerbeschutz oder Baufinanzierung), suchen Sie sich einen freien Slot im Kalender aus, und der Termin wird automatisch für Sie reserviert und nach Freigabe im Dashboard angezeigt.",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-roadmap",
+      "triggerKeywords": [
+        "phase",
+        "fortschritt",
+        "roadmap",
+        "schritt",
+        "prozess",
+        "status",
+        "abgeschlossen",
+        "meilenstein"
+      ],
+      "answer": "Ihre interaktive Projekt-Roadmap gliedert sich in 5 strukturierte Phasen – von der Bedarfsanalyse über das detaillierte Konzept bis zur finalen Umsetzung und laufenden Betreuung. Der Admin schaltet diese Roadmap individuell für Sie frei ('scharf schalten'), so dass Sie zu jedem Zeitpunkt exakt wissen, welche Aufgaben für Sie anstehen und was Frau Kraft gerade für Sie erledigt.",
+      "usagesCount": 0,
+      "lastEditedBy": "System"
+    },
+    {
+      "id": "rule-kontakt",
+      "triggerKeywords": [
+        "kontakt",
+        "support",
+        "telefon",
+        "email",
+        "mail",
+        "anrufen",
+        "telefonnummer",
+        "erreichbar",
+        "öffnungszeiten",
+        "adresse",
+        "büro"
+      ],
+      "answer": "Sie erreichen das Maklerbüro Anika Kraft telefonisch von Montag bis Freitag von 08:30 bis 17:30 Uhr unter **08042 5642007** oder per E-Mail unter **support@aerocrm.de**. Unser Büro befindet sich in der landschaftlich schönen Region Bayreuth, wir beraten Mandanten jedoch bundesweit komplett digital. Für hochsensible Daten nutzen Sie bitte stets die integrierte Chat-E2E-Verschlüsselung hier im Portal.",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-versicherung",
+      "triggerKeywords": [
+        "versicherung",
+        "vorsorge",
+        "bu",
+        "berufsunfähigkeit",
+        "krankenversicherung",
+        "rente",
+        "altersvorsorge",
+        "pflege",
+        "unfall",
+        "privat",
+        "haftpflicht",
+        "hausrat",
+        "rechtsschutz",
+        "kfz",
+        "zahn"
+      ],
+      "answer": "Als ungebundene Finanz- & Versicherungsmaklerin vergleichen wir für Sie Tarife bei über 300 Gesellschaften nach dem Best-Select-Prinzip. Egal ob private Altersvorsorge (Riester, Rürup, private Rente), Berufsunfähigkeitsabsicherung (BU) mit anonymer Risikovoranfrage, private Krankenversicherung (PKV) oder klassischer Sachschutz (Haftpflicht, Hausrat, Kasko). Wir finden den optimalen Beitrag mit den stärksten Bedingungen, abgestimmt auf Ihre Lebenslage!",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-gewerbe",
+      "triggerKeywords": [
+        "gewerbe",
+        "firma",
+        "betrieb",
+        "cyber",
+        "betriebshaftpflicht",
+        "gmbh",
+        "selbstständig",
+        "inhaltsversicherung",
+        "inventar",
+        "d&o",
+        "bav",
+        "firmenversicherung"
+      ],
+      "answer": "Für Gewerbekunden und Selbstständige konzipieren wir maßgeschneiderten Haftungs- und Sachschutz. Dazu gehören die Betriebshaftpflichtversicherung zur Abwehr unberechtigter Ansprüche, Inhaltsversicherungen für Maschinen und Warenbestände, D&O-Organhaftung sowie moderne Cyber-Risk-Konzepte zur Absicherung gegen Erpressung und Systemausfälle. Zudem richten wir betriebliche Altersvorsorge-Modelle (bAV) ein, um Ihre Mitarbeiterbindung aktiv zu stärken.",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-baufinanzierung",
+      "triggerKeywords": [
+        "baufinanzierung",
+        "kredit",
+        "darlehen",
+        "immobilie",
+        "finanzierung",
+        "zins",
+        "baufi",
+        "zinsen",
+        "kaufen",
+        "hausbau",
+        "tilgung",
+        "kfw"
+      ],
+      "answer": "Wir machen Ihren Traum vom Eigenheim wahr! Über unsere professionellen Kredit-Plattformen vergleichen wir tagesaktuelle Zinskonditionen von über 450 namhaften Banken, Bausparkassen und Versicherern (z.B. ING, DSL Bank, Allianz, regionale Sparkassen & Volksbanken). Wir prüfen staatliche KfW-Förderungen auf Förderfähigkeit und strukturieren die Tilgungsrate exakt nach Ihrer monatlichen Haushaltsrechnung.",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-keasy",
+      "triggerKeywords": [
+        "keasy",
+        "app",
+        "digitaler",
+        "ordner",
+        "smartphone",
+        "kundenordner",
+        "mobil",
+        "zugang",
+        "vfm app"
+      ],
+      "answer": "Mit der preisgekrönten Kunden-App 'Keasy' haben Sie all Ihre Versicherungsverträge direkt auf Ihrem Smartphone! Sie können Schadensfotos hochladen, Verträge digital verwalten und haben Ihre Service-Kontakte von Anika Kraft immer griffbereit. Wenn Sie freigeschaltet sind, senden wir Ihnen Ihre Aktivierungsdaten per QR-Code oder SMS zu. Sprechen Sie uns an!",
+      "usagesCount": 0,
+      "lastEditedBy": "System"
+    },
+    {
+      "id": "rule-aerocrm",
+      "triggerKeywords": [
+        "aerocrm",
+        "über uns",
+        "experte",
+        "beratung"
+      ],
+      "answer": "AeroCRM Enterprise Suite ist Ihre all-in-one Lösung für moderne Warenwirtschaft, integrierte Webshops und volldigitalisierten Kundensupport. Mit unserer Plattform verwalten Sie Verträge, Finanzen und Rechnungslegungen an einem zentralen Ort.",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    },
+    {
+      "id": "rule-schaden",
+      "triggerKeywords": [
+        "schaden",
+        "schadensmeldung",
+        "unfall",
+        "kaputt",
+        "beschädigt",
+        "sturm",
+        "diebstahl",
+        "einbruch",
+        "wasserschaden",
+        "glasbruch"
+      ],
+      "answer": "Im Schadensfall lassen wir Sie nicht im Stich! Nutzen Sie das Dokumentencenter hier im Portal, um Fotos und den Schadensbericht direkt hochzuladen, senden Sie uns eine Nachricht im Chat oder nutzen Sie die 'Keasy' App für eine Live-Aufnahme vor Ort. Wir übernehmen die komplette Schadenskorrespondenz mit dem Versicherungsunternehmen und kämpfen für Ihre schnelle Regulierung!",
+      "usagesCount": 0,
+      "lastEditedBy": "Anika Kraft"
+    }
+  ],
+  "unresolvedQueries": [],
+  "invoices": [
+    {
+      "id": "inv-1",
+      "invoiceNumber": "RE-2026-001",
+      "customerId": "cust-max",
+      "customerName": "Max Mustermann",
+      "amount": 1190,
+      "taxAmount": 190,
+      "netAmount": 1000,
+      "taxRate": 19,
+      "issueDate": "2026-05-15",
+      "dueDate": "2026-06-15",
+      "status": "Bezahlt",
+      "description": "Risiko- & Vorsorgeanalyse",
+      "paymentMethod": "Überweisung",
+      "paidAt": "2026-05-18",
+      "items": [
+        {
+          "id": "item-1",
+          "description": "Strukturierte Bedarfsanalyse privater und gewerblicher Risiken nach Best-Select Standard",
+          "quantity": 1,
+          "unitPrice": 1000,
+          "total": 1000
+        }
+      ]
+    },
+    {
+      "id": "inv-2",
+      "invoiceNumber": "RE-2026-002",
+      "customerId": "cust-max",
+      "customerName": "Max Mustermann",
+      "amount": 345.1,
+      "taxAmount": 55.1,
+      "netAmount": 290,
+      "taxRate": 19,
+      "issueDate": "2026-05-28",
+      "dueDate": "2026-06-28",
+      "status": "Offen",
+      "description": "Gewerbe-Consulting & Cyber-Schutz Audit",
+      "items": [
+        {
+          "id": "item-2",
+          "description": "Auditierung IT-Sicherheits- & Haftungsprotokoll inkl. Einweisungsaufwand",
+          "quantity": 1,
+          "unitPrice": 290,
+          "total": 290
+        }
+      ]
+    },
+    {
+      "id": "inv-3",
+      "invoiceNumber": "RE-2026-003",
+      "customerId": "cust-anna",
+      "customerName": "Anna Schmidt",
+      "amount": 595,
+      "taxAmount": 95,
+      "netAmount": 500,
+      "taxRate": 19,
+      "issueDate": "2026-05-10",
+      "dueDate": "2026-05-24",
+      "status": "Überfällig",
+      "description": "Medienproduktion: Onboarding Video-Schnitt & Sound",
+      "items": [
+        {
+          "id": "item-3",
+          "description": "Schnitt & Postproduction Social-Media Recruitment-Video (45s)",
+          "quantity": 1,
+          "unitPrice": 500,
+          "total": 500
+        }
+      ]
+    }
+  ],
+  "customTemplates": []
+}
