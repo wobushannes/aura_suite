@@ -9,7 +9,7 @@ import Warenwirtschaft from './Warenwirtschaft';
 import BillingAndShipping from './BillingAndShipping';
 import BlogSystem from './BlogSystem';
 import TemplatesManager from './TemplatesManager';
-import { getActiveTemplate } from '../styleTemplates';
+import { getActiveTemplate, STYLE_TEMPLATES } from '../styleTemplates';
 import { 
   Plus, 
   Search, 
@@ -48,8 +48,17 @@ import {
   HelpCircle,
   Receipt,
   Layers,
-  BookOpen
+  BookOpen,
+  Tag,
+  BarChart3,
+  Palette,
+  ShoppingBag,
+  GripVertical,
+  EyeOff,
+  LayoutGrid,
+  Settings
 } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 const getPlausibleContracts = (cust: Customer) => [
   {
@@ -77,8 +86,8 @@ const getPlausibleContracts = (cust: Customer) => [
   },
   {
     id: 'pc2',
-    name: 'Kraftwerk Shop-Modul & Payment-Integration',
-    insurer: 'Kraftwerk Core Dev-Team AG',
+    name: 'Aura Shop-Modul & Payment-Integration',
+    insurer: 'Aura Core Dev-Team AG',
     policyNumber: `CMS-${cust.id.substring(0, 3).toUpperCase()}-509-AA`,
     premium: 520.00,
     paymentInterval: 'Jahr',
@@ -100,8 +109,8 @@ const getPlausibleContracts = (cust: Customer) => [
   },
   {
     id: 'pc3',
-    name: 'Kraftwerk Enterprise Cloud Hosting',
-    insurer: 'Kraftwerk Operations Team',
+    name: 'Aura Enterprise Cloud Hosting',
+    insurer: 'Aura Operations Team',
     policyNumber: `HST-${cust.id.substring(0, 3).toUpperCase()}-224-BB`,
     premium: 480.00,
     paymentInterval: 'Jahr',
@@ -123,8 +132,8 @@ const getPlausibleContracts = (cust: Customer) => [
   },
   {
     id: 'pc4',
-    name: 'Kraftwerk Update- & SLA-Supportvertrag',
-    insurer: 'Kraftwerk Systems AG',
+    name: 'Aura Update- & SLA-Supportvertrag',
+    insurer: 'Aura Systems AG',
     policyNumber: `SLA-${cust.id.substring(0, 3).toUpperCase()}-220-33`,
     premium: 290.00,
     paymentInterval: 'Jahr',
@@ -146,8 +155,8 @@ const getPlausibleContracts = (cust: Customer) => [
   },
   {
     id: 'pc5',
-    name: 'Kraftwerk Backup & Cloud-Storage Suite',
-    insurer: 'Kraftwerk Solutions Inc.',
+    name: 'Aura Backup & Cloud-Storage Suite',
+    insurer: 'Aura Solutions Inc.',
     policyNumber: `STG-${cust.id.substring(0, 3).toUpperCase()}-445-98`,
     premium: 210.05,
     paymentInterval: 'Jahr',
@@ -178,9 +187,30 @@ interface AdminCRMProps {
   onTabChange?: (tab: string) => void;
   onSimulateCustomer?: (id: string | null) => void;
   onPreviewPublicFrontend?: () => void;
+  forcedCustomerSearch?: string;
+  onClearForcedCustomerSearch?: () => void;
+  forcedFileSearch?: string;
+  onClearForcedFileSearch?: () => void;
+  forcedActiveChatCustomerId?: string;
+  onClearForcedActiveChatCustomerId?: () => void;
 }
 
-export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOnlineToggle, onTabChange, onSimulateCustomer, onPreviewPublicFrontend }: AdminCRMProps) {
+export default function AdminCRM({ 
+  data, 
+  onDataChange, 
+  activeTab, 
+  isOnline, 
+  onOnlineToggle, 
+  onTabChange, 
+  onSimulateCustomer, 
+  onPreviewPublicFrontend,
+  forcedCustomerSearch,
+  onClearForcedCustomerSearch,
+  forcedFileSearch,
+  onClearForcedFileSearch,
+  forcedActiveChatCustomerId,
+  onClearForcedActiveChatCustomerId
+}: AdminCRMProps) {
   const activeTemplate = useMemo(() => {
     return getActiveTemplate(data.settings?.activeTemplateId);
   }, [data.settings?.activeTemplateId]);
@@ -212,9 +242,9 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
       videosEnabled: true,
       botEnabled: true,
       chatEnabled: true,
-      companyName: 'Kraftwerk Suite Enterprise',
+      companyName: 'Aura Suite Enterprise',
       companyAddress: 'Musterstraße 1, 80331 München',
-      companyEmail: 'support@kraftwerk-suite.de',
+      companyEmail: 'support@aura-suite.de',
       companyPhone: '+49 123 456789',
       iban: 'DE49 7835 1520 1883 1941 12',
       bic: 'BYLADEM1LIC',
@@ -265,6 +295,20 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
 
   // --- STATE FOR MOUNTING TEMPLATE CUSTOMIZER ---
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  
+  // --- STATE FOR PREDEFINED COMMUNICATION TEMPLATES ---
+  const [editingCommTemplate, setEditingCommTemplate] = useState<{
+    id?: string;
+    title: string;
+    subject: string;
+    content: string;
+    type: 'email' | 'chat' | 'all';
+    category: string;
+  } | null>(null);
+  const [isCommTemplateModalOpen, setIsCommTemplateModalOpen] = useState(false);
+  const [commTemplateFilterCategory, setCommTemplateFilterCategory] = useState('all');
+  const [commTemplateFilterType, setCommTemplateFilterType] = useState('all');
+  const [commTemplateSearch, setCommTemplateSearch] = useState('');
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [templateForm, setTemplateForm] = useState({
     name: '',
@@ -339,6 +383,71 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
   );
   const [chatInput, setChatInput] = useState('');
 
+  // --- STATE FOR DASHBOARD WIDGETS DRAG & DROP & VISIBILITY ---
+  const [showLayoutCustomizer, setShowLayoutCustomizer] = useState(false);
+  const [localDraggedWidgetId, setLocalDraggedWidgetId] = useState<string | null>(null);
+  const [localDragOverWidgetId, setLocalDragOverWidgetId] = useState<string | null>(null);
+
+  const handleWidgetDragStart = (id: string) => {
+    setLocalDraggedWidgetId(id);
+  };
+
+  const handleWidgetDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (localDraggedWidgetId && localDraggedWidgetId !== id) {
+      setLocalDragOverWidgetId(id);
+    }
+  };
+
+  const handleWidgetDrop = (targetId: string) => {
+    if (!localDraggedWidgetId || localDraggedWidgetId === targetId) return;
+    
+    const currentOrder = [...(data.settings?.dashboardWidgetsOrder || ['revenue', 'news', 'blog'])];
+    const draggedIndex = currentOrder.indexOf(localDraggedWidgetId);
+    const targetIndex = currentOrder.indexOf(targetId);
+    
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      // Reorder
+      currentOrder.splice(draggedIndex, 1);
+      currentOrder.splice(targetIndex, 0, localDraggedWidgetId);
+      
+      onDataChange((prev: CRMData) => ({
+        ...prev,
+        settings: {
+          ...(prev.settings || {} as any),
+          dashboardWidgetsOrder: currentOrder,
+        }
+      }));
+
+      handleLogAction(
+        'DASHBOARD_LAYOUT_CHANGE',
+        `Reihenfolge der Dashboard-Widgets geändert: ${currentOrder.join(', ')}`
+      );
+    }
+    
+    setLocalDraggedWidgetId(null);
+    setLocalDragOverWidgetId(null);
+  };
+
+  const handleToggleWidgetVisibility = (id: string) => {
+    const currentVisibility = { ...(data.settings?.dashboardWidgetsVisibility || { revenue: true, news: true, blog: true }) };
+    const nextVal = currentVisibility[id] === false; // toggle
+    currentVisibility[id] = nextVal;
+
+    onDataChange((prev: CRMData) => ({
+      ...prev,
+      settings: {
+        ...(prev.settings || {} as any),
+        dashboardWidgetsVisibility: currentVisibility,
+      }
+    }));
+
+    handleLogAction(
+      'DASHBOARD_LAYOUT_VISIBILITY',
+      `Dashboard-Widget '${id}' wurde ${nextVal ? 'eingeblendet' : 'ausgeblendet'}.`
+    );
+  };
+
   // --- STATE FOR CALENDAR (APPOINTMENTS) ---
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [appointmentForm, setAppointmentForm] = useState({
@@ -364,6 +473,28 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
     score: number;
     answer: string;
   } | null>(null);
+
+  // Synchronise search/filter state triggered globally from Sidebar search bar
+  React.useEffect(() => {
+    if (forcedCustomerSearch) {
+      setCustomerSearch(forcedCustomerSearch);
+      if (onClearForcedCustomerSearch) onClearForcedCustomerSearch();
+    }
+  }, [forcedCustomerSearch, onClearForcedCustomerSearch]);
+
+  React.useEffect(() => {
+    if (forcedFileSearch) {
+      setFileSearch(forcedFileSearch);
+      if (onClearForcedFileSearch) onClearForcedFileSearch();
+    }
+  }, [forcedFileSearch, onClearForcedFileSearch]);
+
+  React.useEffect(() => {
+    if (forcedActiveChatCustomerId) {
+      setActiveChatCustomerId(forcedActiveChatCustomerId);
+      if (onClearForcedActiveChatCustomerId) onClearForcedActiveChatCustomerId();
+    }
+  }, [forcedActiveChatCustomerId, onClearForcedActiveChatCustomerId]);
 
   // --- KI-BOT TRAINING ACTIONS ---
   const handleOpenBotRuleModal = (ruleId: string | null = null) => {
@@ -717,6 +848,60 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
         ...data,
         customTemplates: updated
       });
+    }
+  };
+
+  const handleSaveCommTemplate = () => {
+    if (!editingCommTemplate) return;
+    if (!editingCommTemplate.title.trim() || !editingCommTemplate.content.trim()) {
+      alert('Titel und Inhalt dürfen nicht leer sein.');
+      return;
+    }
+
+    const currentTemplates = data.communicationTemplates || [];
+    let updated;
+
+    if (editingCommTemplate.id) {
+      updated = currentTemplates.map(t => t.id === editingCommTemplate.id ? {
+        ...t,
+        title: editingCommTemplate.title,
+        subject: editingCommTemplate.subject,
+        content: editingCommTemplate.content,
+        type: editingCommTemplate.type,
+        category: editingCommTemplate.category
+      } : t);
+      handleLogAction('Antwort-Vorlage geändert', `ID: ${editingCommTemplate.id}, Titel: ${editingCommTemplate.title}`);
+    } else {
+      const newTpl = {
+        id: `comm-tpl-${Date.now()}`,
+        title: editingCommTemplate.title,
+        subject: editingCommTemplate.subject,
+        content: editingCommTemplate.content,
+        type: editingCommTemplate.type,
+        category: editingCommTemplate.category || 'Allgemein',
+        createdAt: new Date().toISOString()
+      };
+      updated = [...currentTemplates, newTpl];
+      handleLogAction('Antwort-Vorlage erstellt', `Titel: ${editingCommTemplate.title}`);
+    }
+
+    onDataChange(prev => ({
+      ...prev,
+      communicationTemplates: updated
+    }));
+    setIsCommTemplateModalOpen(false);
+    setEditingCommTemplate(null);
+  };
+
+  const handleDeleteCommTemplate = (tplId: string) => {
+    if (confirm('Möchten Sie diese Antwort-Vorlage wirklich dauerhaft löschen?')) {
+      const currentTemplates = data.communicationTemplates || [];
+      const updated = currentTemplates.filter(t => t.id !== tplId);
+      onDataChange(prev => ({
+        ...prev,
+        communicationTemplates: updated
+      }));
+      handleLogAction('Antwort-Vorlage gelöscht', `ID: ${tplId}`);
     }
   };
 
@@ -1242,8 +1427,8 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
       <div className="h-10 bg-slate-900 border-b border-slate-800 px-5 flex items-center justify-between text-xs text-slate-300 font-sans select-none flex-shrink-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 font-bold font-mono tracking-wide text-indigo-400 text-[11px] uppercase">
-            <span className="w-2.5 h-2.5 bg-indigo-600 rounded flex items-center justify-center text-white text-[8px] font-black leading-none">K</span>
-            <span>Kraftwerk Backend</span>
+            <span className="w-2.5 h-2.5 bg-indigo-600 rounded flex items-center justify-center text-white text-[8px] font-black leading-none">A</span>
+            <span>Aura Backend</span>
           </div>
           <span className="text-slate-800">|</span>
           <button
@@ -1304,25 +1489,25 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
               {[
                 {
                   key: 'appointmentsEnabled',
-                  name: 'Kraftwerk Booking Pro',
+                  name: 'Aura Booking Pro',
                   desc: 'Integrierte Online-Terminplanung für Servicekunden mit automatischer Kalenderleitung und E-Mail-Notizen.',
                   icon: Calendar,
                   category: 'Planung & Buchung',
                   version: 'v2.1.0',
-                  developer: 'Kraftwerk Core'
+                  developer: 'Aura Core'
                 },
                 {
                   key: 'invoicesEnabled',
-                  name: 'Kraftwerk Invoicing & Billing',
+                  name: 'Aura Invoicing & Billing',
                   desc: 'System-Module für Rechnungslegung, Lastschriftvorlagen, automatische MwSt. und digitale Rechnungsverläufe.',
                   icon: Receipt,
                   category: 'Finanzwesen',
                   version: 'v1.8.4',
-                  developer: 'Kraftwerk Finance'
+                  developer: 'Aura Finance'
                 },
                 {
                   key: 'shopEnabled',
-                  name: 'Kraftwerk Inventory & Webshop (ERP)',
+                  name: 'Aura Inventory & Webshop (ERP)',
                   desc: 'Warenwirtschaftssystem mit digitalem Webshop, Produktlagerregalen, Warenkorb und Logistik-Schnittstellen.',
                   icon: Layers,
                   category: 'E-Commerce',
@@ -1331,16 +1516,16 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                 },
                 {
                   key: 'blogEnabled',
-                  name: 'Kraftwerk Blog & Editorial Engine',
+                  name: 'Aura Blog & Editorial Engine',
                   desc: 'Abonnenten-Blog mit Beitragseditor zur Veröffentlichung von Vorteilsberichten, Leitfäden und Kundenkommentaren.',
                   icon: BookOpen,
                   category: 'Content-System',
                   version: 'v1.5.0',
-                  developer: 'Kraftwerk Solutions'
+                  developer: 'Aura Solutions'
                 },
                 {
                   key: 'videosEnabled',
-                  name: 'Kraftwerk Media Streaming Core',
+                  name: 'Aura Media Streaming Core',
                   desc: 'Erlaubt Mandanten den datensicheren Videodateiverlauf und Upload von hochauflösendem Foto- & Videomaterial.',
                   icon: Video,
                   category: 'Multimedia',
@@ -1349,7 +1534,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                 },
                 {
                   key: 'botEnabled',
-                  name: 'Kraftwerk AI Business Assistant',
+                  name: 'Aura AI Business Assistant',
                   desc: 'FAQ-Schnittstelle mit digitalisierbaren Frage-Antwort-Regeln, die Kundenanfragen rund um die Uhr automatisch klärt.',
                   icon: Cpu,
                   category: 'Künstliche Intelligenz',
@@ -1358,7 +1543,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                 },
                 {
                   key: 'chatEnabled',
-                  name: 'Kraftwerk Safe-Chat (E2EE/AES)',
+                  name: 'Aura Safe-Chat (E2EE/AES)',
                   desc: 'Kryptografisch gesicherter Beratungschat mit Ende-zu-Ende AES-Verschlüsselung für absolut geschützte Kommunikation.',
                   icon: MessageSquare,
                   category: 'Kryptografie & Security',
@@ -1450,11 +1635,128 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                 <h1 className="text-base font-bold text-slate-800">Willkommen zurück, Administrator</h1>
                 <p className="text-xs text-slate-500 mt-0.5">Hier ist Ihr aktuelles Software- und CMS-Management im Überblick.</p>
               </div>
-              <div className="px-2.5 py-1 bg-blue-50 text-blue-750 border border-blue-150 rounded font-mono text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5 flex-shrink-0">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                <span>Offline-Datenbank</span>
+              <div className="flex items-center gap-2.5 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowLayoutCustomizer(!showLayoutCustomizer)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer select-none outline-none ${
+                    showLayoutCustomizer
+                      ? 'bg-indigo-600 text-white border-indigo-700 shadow-xs'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Dashboard anpassen</span>
+                </button>
+                <div className="px-2.5 py-1.5 bg-blue-50 text-blue-750 border border-blue-150 rounded font-mono text-[10px] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                  <span>Offline-Datenbank</span>
+                </div>
               </div>
             </div>
+
+            {/* Layout Customizer Panel */}
+            {showLayoutCustomizer && (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-4 animate-slide-in space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <Sliders className="w-4 h-4 text-indigo-650" />
+                      Dashboard-Widgets verwalten (Drag & Drop)
+                    </h3>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Ziehen Sie die Elemente am Griff <GripVertical className="inline h-3.5 w-3.5 text-slate-400" /> nach oben oder unten, um deren Reihenfolge auf dem Dashboard einzustellen. Mit dem Augensymbol schalten Sie die Sichtbarkeit um.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setShowLayoutCustomizer(false)}
+                    className="text-xs text-slate-400 hover:text-slate-600 px-2 py-1 hover:bg-slate-200/50 rounded-lg cursor-pointer transition-colors"
+                  >
+                    Schließen
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {(data.settings?.dashboardWidgetsOrder || ['revenue', 'news', 'blog']).map((id, index) => {
+                    const isVisible = (data.settings?.dashboardWidgetsVisibility?.[id] !== false);
+                    let title = '';
+                    let desc = '';
+                    let icon = null;
+
+                    if (id === 'revenue') {
+                      title = 'Umsatzübersicht & Zahlungen';
+                      desc = 'Zusammenfassung des Brutto- & Netto-Umsatzes, ausstehende Beträge und ein visueller Umsatzchart nach Rechnungen.';
+                      icon = <Receipt className="w-4 h-4 text-emerald-600" />;
+                    } else if (id === 'news') {
+                      title = 'Kunden-News & Aktivität';
+                      desc = 'Anstehende Kalendertermine, Dokumentenupload-Statistiken, Dateikategorien und ein Aktivitätsverlauf.';
+                      icon = <Users className="w-4 h-4 text-blue-600" />;
+                    } else if (id === 'blog') {
+                      title = 'Blog-Statistiken (Themen-Trendanalyse)';
+                      desc = 'Visualisierung der Beitrags-Schlagworte im Recharts Säulendiagramm und interaktive Keyword-Wolke.';
+                      icon = <BookOpen className="w-4 h-4 text-indigo-650" />;
+                    }
+
+                    const isDragged = localDraggedWidgetId === id;
+                    const isOver = localDragOverWidgetId === id;
+
+                    return (
+                      <div
+                        key={id}
+                        draggable
+                        onDragStart={() => handleWidgetDragStart(id)}
+                        onDragOver={(e) => handleWidgetDragOver(e, id)}
+                        onDrop={() => handleWidgetDrop(id)}
+                        onDragEnd={() => {
+                          setLocalDraggedWidgetId(null);
+                          setLocalDragOverWidgetId(null);
+                        }}
+                        className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                          isDragged
+                            ? 'bg-indigo-50/60 border-indigo-300 opacity-50 scale-[0.98]'
+                            : isOver
+                              ? 'bg-slate-100 border-indigo-500 border-dashed scale-[1.01] shadow-2xs'
+                              : 'bg-white border-slate-200 shadow-3xs hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1.5 rounded hover:bg-slate-100">
+                            <GripVertical className="w-4 h-4" />
+                          </div>
+                          <div className="p-2 bg-slate-50 rounded-lg flex items-center justify-center">
+                            {icon}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                              {title}
+                              {!isVisible && (
+                                <span className="bg-slate-100 text-slate-500 font-mono text-[9px] px-1.5 py-0.5 rounded uppercase">Verborgen</span>
+                              )}
+                            </span>
+                            <p className="text-[10px] text-slate-400 mt-0.5 leading-normal">{desc}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleWidgetVisibility(id)}
+                            className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+                              isVisible
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-150 hover:bg-emerald-100'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                            }`}
+                            title={isVisible ? 'Widget ausblenden' : 'Widget einblenden'}
+                          >
+                            {isVisible ? <Eye className="w-4.5 h-4.5" /> : <EyeOff className="w-4.5 h-4.5" />}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           {/* Quick Metrics Analytics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -1505,139 +1807,499 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Native SVG Visualization: File category ratio & weekly progression */}
-            <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-base font-bold text-slate-800">Dokumentenuploads & Aktivitätsverlauf</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Visuelle Übersicht aller hochgeladenen Client-Dateien</p>
-                </div>
-                <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 rounded-lg text-slate-600">Letzte 30 Tage</span>
-              </div>
-              
-              {/* Animated custom SVG representation */}
-              <div className="h-64 flex flex-col justify-end p-2">
-                <div className="flex items-end justify-around h-48 border-b border-slate-200 pb-2 font-mono text-[10px] text-slate-400">
-                  <div className="flex flex-col items-center group w-12">
-                    <div className="w-8 bg-blue-500 rounded-t-lg h-24 hover:bg-blue-600 transition-all flex items-center justify-center text-white text-[9px] font-bold">
-                      {data.files.filter(f => f.category === 'Vertrag').length}
-                    </div>
-                    <span className="mt-2 text-[10px] font-sans font-medium text-slate-600">Verträge</span>
-                  </div>
+          {/* Dynamic Draggable & Hideable Widgets Deck */}
+          <div className="space-y-6">
+            {(data.settings?.dashboardWidgetsOrder || ['revenue', 'news', 'blog']).map((widgetId) => {
+              const isVisible = (data.settings?.dashboardWidgetsVisibility?.[widgetId] !== false);
+              if (!isVisible) return null;
 
-                  <div className="flex flex-col items-center group w-12">
-                    <div className="w-8 bg-pink-500 rounded-t-lg h-16 hover:bg-pink-600 transition-all flex items-center justify-center text-white text-[9px] font-bold">
-                      {data.files.filter(f => f.category === 'Video').length}
+              if (widgetId === 'revenue') {
+                return (
+                  <div
+                    key="widget-revenue"
+                    draggable
+                    onDragStart={() => handleWidgetDragStart('revenue')}
+                    onDragOver={(e) => handleWidgetDragOver(e, 'revenue')}
+                    onDrop={() => handleWidgetDrop('revenue')}
+                    onDragEnd={() => {
+                      setLocalDraggedWidgetId(null);
+                      setLocalDragOverWidgetId(null);
+                    }}
+                    className={`bg-white p-6 rounded-2xl shadow-sm border transition-all ${
+                      localDraggedWidgetId === 'revenue'
+                        ? 'bg-indigo-50/40 border-indigo-300 opacity-50 scale-[0.99] border-dashed ring-2 ring-indigo-500/10'
+                        : localDragOverWidgetId === 'revenue'
+                          ? 'border-indigo-500 border-dashed bg-slate-50 scale-[1.01] shadow-md'
+                          : 'border-slate-200/60 hover:border-slate-350 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex items-center gap-2.5">
+                        <span className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1.5 rounded hover:bg-slate-100 flex-shrink-0" title="Ziehen zum Neuanordnen">
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                            <Receipt className="h-5 w-5 text-emerald-600" />
+                            Finanzieller Umsatz & Rechnungsstatistik (Umsatzübersicht)
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-0.5">Analytische Auswertung aller gebuchten Lizenzen & ERP-Käufe</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] bg-emerald-50 text-emerald-700 font-mono font-bold tracking-wide px-2.5 py-1 rounded-lg border border-emerald-200/60 uppercase">
+                          Finanzwesen
+                        </span>
+                      </div>
                     </div>
-                    <span className="mt-2 text-[10px] font-sans font-medium text-slate-600">Videos</span>
-                  </div>
 
-                  <div className="flex flex-col items-center group w-12">
-                    <div className="w-8 bg-emerald-500 rounded-t-lg h-12 hover:bg-emerald-600 transition-all flex items-center justify-center text-white text-[9px] font-bold">
-                      {data.files.filter(f => f.category === 'Datei').length}
-                    </div>
-                    <span className="mt-2 text-[10px] font-sans font-medium text-slate-600">Dateien</span>
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-between text-xs text-slate-400 px-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-3 h-3 bg-blue-500 rounded-lg"></span>
-                    <span>Rechtliche Verträge</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="w-3 h-3 bg-pink-500 rounded-lg"></span>
-                    <span>Videoberatungen</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="w-3 h-3 bg-emerald-500 rounded-lg"></span>
-                    <span>Zusatzdokumente</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+                    {/* Calculations */}
+                    {(() => {
+                      const invoicesVal = data.invoices || [];
+                      const totalGrossPaid = invoicesVal
+                        .filter(i => i.status === 'Bezahlt')
+                        .reduce((sum, i) => sum + i.amount, 0);
+                      const totalNetPaid = invoicesVal
+                        .filter(i => i.status === 'Bezahlt')
+                        .reduce((sum, i) => sum + i.netAmount, 0);
+                      const openGross = invoicesVal
+                        .filter(i => i.status === 'Offen' || i.status === 'Überfällig')
+                        .reduce((sum, i) => sum + i.amount, 0);
+                      
+                      const allGrossVolume = invoicesVal.reduce((sum, i) => sum + i.amount, 0);
+                      const paidPercentage = allGrossVolume > 0 ? (totalGrossPaid / allGrossVolume) * 100 : 100;
 
-            {/* Quick action checklist / recent logs */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
-              <h3 className="text-base font-bold text-slate-800 mb-4">Anstehende Termine</h3>
-              <div className="space-y-4">
-                {data.appointments.length > 0 ? (
-                  data.appointments.slice(0, 4).map(appt => {
-                    const client = data.customers.find(c => c.id === appt.customerId);
-                    return (
-                      <div key={appt.id} className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex items-start space-x-3 hover:bg-slate-100/55 transition-colors">
-                        <Calendar className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-slate-700">{appt.title}</p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">{appt.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200/50">
-                              {appt.date} • {appt.time} Uhr
-                            </span>
-                            {client && (
-                              <span className="text-[10px] text-slate-400 font-medium">Kunde: {client.name}</span>
+                      // Chart projection over time (using issue dates)
+                      const monthlyRevenue: Record<string, number> = {};
+                      invoicesVal.forEach(inv => {
+                        if (!inv.issueDate) return;
+                        const month = inv.issueDate.substring(0, 7); // YYYY-MM
+                        monthlyRevenue[month] = (monthlyRevenue[month] || 0) + inv.netAmount;
+                      });
+
+                      const chartData = Object.entries(monthlyRevenue)
+                        .map(([name, value]) => ({ name, value }))
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .slice(-6); // last 6 months
+
+                      return (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                          {/* Left stats columns */}
+                          <div className="space-y-3 flex flex-col justify-between">
+                            <div className="space-y-3">
+                              {/* Stat 1: Total Paid Net */}
+                              <div className="p-4 bg-emerald-50/20 rounded-xl border border-emerald-100 flex items-center justify-between">
+                                <div>
+                                  <p className="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Netto Einnahmen (bezahlt)</p>
+                                  <p className="text-xl font-black text-slate-900 mt-1 font-mono">
+                                    {totalNetPaid.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                                  </p>
+                                </div>
+                                <span className="p-2 bg-emerald-100 text-emerald-750 rounded-lg font-bold text-xs">Net</span>
+                              </div>
+
+                              {/* Stat 2: Total Paid Gross */}
+                              <div className="p-4 bg-indigo-50/20 rounded-xl border border-indigo-100 flex items-center justify-between">
+                                <div>
+                                  <p className="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Brutto Umsatz (bezahlt)</p>
+                                  <p className="text-xl font-black text-slate-900 mt-1 font-mono">
+                                    {totalGrossPaid.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                                  </p>
+                                </div>
+                                <span className="p-2 bg-indigo-100 text-indigo-750 text-xs font-bold rounded-lg">Brut</span>
+                              </div>
+
+                              {/* Stat 3: Open Volume */}
+                              <div className="p-4 bg-amber-50/20 rounded-xl border border-amber-100 flex items-center justify-between">
+                                <div>
+                                  <p className="text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Ausstehendes Volumen</p>
+                                  <p className="text-xl font-black text-slate-900 mt-1 font-mono">
+                                    {openGross.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                                  </p>
+                                </div>
+                                <span className="p-2 bg-amber-100 text-amber-755 text-xs font-bold rounded-lg">Offen</span>
+                              </div>
+                            </div>
+
+                            {/* Paid ratio bar */}
+                            <div className="space-y-1.5 p-1 mt-2">
+                              <div className="flex justify-between text-xs font-medium">
+                                <span className="text-slate-500">Realisiertes Umsatzverhältnis</span>
+                                <span className="font-mono text-slate-800 font-bold">{paidPercentage.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden flex">
+                                <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${paidPercentage}%` }}></div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right graphics dashboard (Recharts) */}
+                          <div className="lg:col-span-2 bg-slate-50 border border-slate-150 p-5 rounded-2xl h-72">
+                            <p className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase mb-4 flex items-center justify-between">
+                              <span>Umsatzentwicklung über Monate (Netto-Umsatz)</span>
+                              <span className="text-[9px] font-mono normal-case bg-indigo-100 text-indigo-750 px-2 rounded">Gesamt: {invoicesVal.length} Rechnungen</span>
+                            </p>
+                            {chartData.length > 0 ? (
+                              <div className="h-48">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={chartData}>
+                                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                                    <Tooltip 
+                                      formatter={(val: number) => {
+                                        return [val.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }), 'Netto-Umsatz'];
+                                      }}
+                                      contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                                    />
+                                    <Bar dataKey="value" fill="#10b981" name="Umsatz">
+                                      {chartData.map((entry, index) => (
+                                        <Cell 
+                                          key={`cell-${index}`} 
+                                          fill={index === chartData.length - 1 ? '#059669' : '#10b981'} 
+                                        />
+                                      ))}
+                                    </Bar>
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            ) : (
+                              <div className="h-44 flex items-center justify-center text-center text-xs text-slate-400">
+                                <span>Keine Umsatzdaten für grafische Darstellung verfügbar.</span>
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="text-xs text-slate-400 py-10 text-center">Keine Termine geplant.</p>
-                )}
-              </div>
-            </div>
-          </div>
+                      );
+                    })()}
+                  </div>
+                );
+              }
 
-          {/* Pending Document Upload Review List */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
-            <h3 className="text-base font-bold text-slate-800 mb-4">Ungeprüfte Kundendokumente / Freigaben</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 text-xs font-mono uppercase">
-                    <th className="py-3 px-4 font-bold">Kunde</th>
-                    <th className="py-3 px-4 font-bold">Dateiname</th>
-                    <th className="py-3 px-4 font-bold">Kategorie</th>
-                    <th className="py-3 px-4 font-bold">Upload-Datum</th>
-                    <th className="py-3 px-4 font-bold">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {data.files.filter(f => f.status === 'Eingereicht').length > 0 ? (
-                    data.files.filter(f => f.status === 'Eingereicht').map(file => (
-                      <tr key={file.id} className="hover:bg-slate-50/50">
-                        <td className="py-3.5 px-4 font-semibold text-slate-800">{file.customerName}</td>
-                        <td className="py-3.5 px-4 font-medium text-slate-600">{file.name}</td>
-                        <td className="py-3.5 px-4">
-                          <span className={`inline-flex items-center text-[11px] px-2.5 py-0.5 rounded-full font-medium ${
-                            file.category === 'Vertrag' ? 'bg-blue-50 text-blue-700' :
-                            file.category === 'Video' ? 'bg-pink-50 text-pink-700' : 'bg-emerald-50 text-emerald-700'
-                          }`}>
-                            {file.category}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-slate-400 font-mono text-xs">
-                          {new Date(file.uploadDate).toLocaleDateString('de-DE')}
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <span className="inline-flex items-center space-x-1 text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg font-medium border border-amber-200/50">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Ungeprüft</span>
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="py-10 text-center text-slate-400 text-xs">
-                        Alle eingereichten Dateien wurden bearbeitet und freigegeben!
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+              if (widgetId === 'news') {
+                return (
+                  <div
+                    key="widget-news"
+                    draggable
+                    onDragStart={() => handleWidgetDragStart('news')}
+                    onDragOver={(e) => handleWidgetDragOver(e, 'news')}
+                    onDrop={() => handleWidgetDrop('news')}
+                    onDragEnd={() => {
+                      setLocalDraggedWidgetId(null);
+                      setLocalDragOverWidgetId(null);
+                    }}
+                    className={`bg-white p-6 rounded-2xl shadow-sm border transition-all ${
+                      localDraggedWidgetId === 'news'
+                        ? 'bg-indigo-50/40 border-indigo-300 opacity-50 scale-[0.99] border-dashed ring-2 ring-indigo-500/10'
+                        : localDragOverWidgetId === 'news'
+                          ? 'border-indigo-500 border-dashed bg-slate-50 scale-[1.01] shadow-md'
+                          : 'border-slate-200/60 hover:border-slate-350 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex items-center gap-2.5">
+                        <span className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1.5 rounded hover:bg-slate-100 flex-shrink-0" title="Ziehen zum Neuanordnen">
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                            <Users className="h-5 w-5 text-blue-600" />
+                            Kunden-News & Aktivität (Recent Feed)
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-0.5">Analytischer Aktivitätsverlauf und anstehende Termine</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] bg-blue-50 text-blue-750 font-mono font-bold tracking-wide px-2.5 py-1 rounded-lg border border-blue-200/60 uppercase">
+                          Kundenaktivität
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      {/* Native SVG Visualization: File category ratio & weekly progression */}
+                      <div className="lg:col-span-2 bg-slate-55/40 p-5 rounded-2xl border border-slate-150">
+                        <div className="flex justify-between items-center mb-6">
+                          <div>
+                            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700">Dokumentenuploads & Aktivitätsverlauf</h4>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Visuelle Übersicht aller hochgeladenen Client-Dateien</p>
+                          </div>
+                          <span className="text-[10px] font-semibold px-2.5 py-0.5 bg-white rounded-lg text-slate-500 border border-slate-200">Letzte 30 Tage</span>
+                        </div>
+                        
+                        {/* Animated custom SVG representation */}
+                        <div className="h-56 flex flex-col justify-end p-2 bg-white rounded-xl border border-slate-150/50">
+                          <div className="flex items-end justify-around h-36 border-b border-slate-150 pb-2 font-mono text-[9px] text-slate-400">
+                            <div className="flex flex-col items-center group w-12">
+                              <div className="w-8 bg-blue-500 rounded-t-lg h-24 hover:bg-blue-600 transition-all flex items-center justify-center text-white text-[9px] font-bold">
+                                {data.files.filter(f => f.category === 'Vertrag').length}
+                              </div>
+                              <span className="mt-2 text-[10px] font-sans font-medium text-slate-500">Verträge</span>
+                            </div>
+
+                            <div className="flex flex-col items-center group w-12">
+                              <div className="w-8 bg-pink-500 rounded-t-lg h-16 hover:bg-pink-650 transition-all flex items-center justify-center text-white text-[9px] font-bold">
+                                {data.files.filter(f => f.category === 'Video').length}
+                              </div>
+                              <span className="mt-2 text-[10px] font-sans font-medium text-slate-500">Videos</span>
+                            </div>
+
+                            <div className="flex flex-col items-center group w-12">
+                              <div className="w-8 bg-emerald-500 rounded-t-lg h-12 hover:bg-emerald-650 transition-all flex items-center justify-center text-white text-[9px] font-bold">
+                                {data.files.filter(f => f.category === 'Datei').length}
+                              </div>
+                              <span className="mt-2 text-[10px] font-sans font-medium text-slate-500">Dateien</span>
+                            </div>
+                          </div>
+                          <div className="mt-3 flex justify-between text-[10px] text-slate-400 px-2 font-mono">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="w-2.5 h-2.5 bg-blue-500 rounded-lg inline-block"></span>
+                              <span>Rechtliche Verträge</span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="w-2.5 h-2.5 bg-pink-500 rounded-lg inline-block"></span>
+                              <span>Videoberatungen</span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="w-2.5 h-2.5 bg-emerald-500 rounded-lg inline-block"></span>
+                              <span>Zusatzdokumente</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Quick action checklist / recent logs */}
+                      <div className="bg-slate-55/40 p-5 rounded-2xl border border-slate-150">
+                        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700 mb-4">Anstehende Termine</h4>
+                        <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                          {data.appointments.length > 0 ? (
+                            data.appointments.slice(0, 3).map(appt => {
+                              const client = data.customers.find(c => c.id === appt.customerId);
+                              return (
+                                <div key={appt.id} className="p-3 bg-white rounded-xl border border-slate-150 flex items-start space-x-2.5 hover:bg-slate-50 transition-colors">
+                                  <Calendar className="h-4.5 w-4.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-slate-700 truncate">{appt.title}</p>
+                                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{appt.description}</p>
+                                    <div className="flex items-center justify-between mt-2 flex-wrap gap-1">
+                                      <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/40">
+                                        {appt.date} • {appt.time} Uhr
+                                      </span>
+                                      {client && (
+                                        <span className="text-[9.5px] text-slate-400 truncate max-w-24">({client.name})</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <p className="text-xs text-slate-400 py-10 text-center">Keine Termine geplant.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pending Document Upload Review List */}
+                    <div className="mt-6 bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wide text-slate-700">Ungeprüfte Kundendokumente / Freigaben</h4>
+                        <span className="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 font-mono font-bold px-2 py-0.5 rounded uppercase">Dringend</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-slate-200 text-slate-400 text-[10px] font-mono uppercase">
+                              <th className="py-2.5 px-3 font-bold">Kunde</th>
+                              <th className="py-2.5 px-3 font-bold">Dateiname</th>
+                              <th className="py-2.5 px-3 font-bold">Kategorie</th>
+                              <th className="py-2.5 px-3 font-bold">Upload-Datum</th>
+                              <th className="py-2.5 px-3 font-bold">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-xs">
+                            {data.files.filter(f => f.status === 'Eingereicht').length > 0 ? (
+                              data.files.filter(f => f.status === 'Eingereicht').slice(0, 5).map(file => (
+                                <tr key={file.id} className="hover:bg-white/60 transition-colors">
+                                  <td className="py-2.5 px-3 font-semibold text-slate-800">{file.customerName}</td>
+                                  <td className="py-2.5 px-3 font-medium text-slate-600 truncate max-w-[124px]">{file.name}</td>
+                                  <td className="py-2.5 px-3">
+                                    <span className={`inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                                      file.category === 'Vertrag' ? 'bg-blue-50 text-blue-700' :
+                                      file.category === 'Video' ? 'bg-pink-50 text-pink-700' : 'bg-emerald-50 text-emerald-700'
+                                    }`}>
+                                      {file.category}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3 text-slate-400 font-mono text-[11px]">
+                                    {new Date(file.uploadDate).toLocaleDateString('de-DE')}
+                                  </td>
+                                  <td className="py-2.5 px-3">
+                                    <span className="inline-flex items-center space-x-1 text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-medium border border-amber-200/50">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      <span>Ungeprüft</span>
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={5} className="py-6 text-center text-slate-400 text-xs">
+                                  Alle eingereichten Dateien wurden bearbeitet und freigegeben!
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (widgetId === 'blog') {
+                return (
+                  <div
+                    key="widget-blog"
+                    draggable
+                    onDragStart={() => handleWidgetDragStart('blog')}
+                    onDragOver={(e) => handleWidgetDragOver(e, 'blog')}
+                    onDrop={() => handleWidgetDrop('blog')}
+                    onDragEnd={() => {
+                      setLocalDraggedWidgetId(null);
+                      setLocalDragOverWidgetId(null);
+                    }}
+                    className={`bg-white p-6 rounded-2xl shadow-sm border transition-all ${
+                      localDraggedWidgetId === 'blog'
+                        ? 'bg-indigo-50/40 border-indigo-300 opacity-50 scale-[0.99] border-dashed ring-2 ring-indigo-500/10'
+                        : localDragOverWidgetId === 'blog'
+                          ? 'border-indigo-500 border-dashed bg-slate-50 scale-[1.01] shadow-md'
+                          : 'border-slate-200/60 hover:border-slate-350 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex items-center gap-2.5">
+                        <span className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 p-1.5 rounded hover:bg-slate-100 flex-shrink-0" title="Ziehen zum Neuanordnen">
+                          <GripVertical className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                            <BarChart3 className="h-5 w-5 text-indigo-650" />
+                            Blog-Statistiken (Schlagwort-Trendanalyse & Themenverteilung)
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Auswertung der Themenplatzierungen im Blog zur Erkennung aktiver Client-Interessen.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => onTabChange('blog')}
+                        className="text-xs font-semibold px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <Tag className="h-3.5 w-3.5" /> Schlagworte verwalten
+                      </button>
+                    </div>
+
+                    {(() => {
+                      const postsVal = data.blogPosts || [];
+                      const counts: Record<string, number> = {};
+                      postsVal.forEach(p => {
+                        if (!p.category) return;
+                        p.category.split(',').forEach(tag => {
+                          const cleaned = tag.trim();
+                          if (!cleaned) return;
+                          counts[cleaned] = (counts[cleaned] || 0) + 1;
+                        });
+                      });
+                      const tagStats = Object.entries(counts)
+                        .map(([name, value]) => ({ name, value }))
+                        .sort((a, b) => b.value - a.value)
+                        .slice(0, 8);
+
+                      return tagStats.length > 0 ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                          {/* Recharts Bar Chart */}
+                          <div className="lg:col-span-2 bg-slate-50 border border-slate-100 p-5 rounded-2xl h-72">
+                            <p className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase mb-4">
+                              Häufigkeitsverteilung (Recharts)
+                            </p>
+                            <div className="h-48">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={tagStats}>
+                                  <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                  <YAxis tick={{ fill: '#64748b', fontSize: 10 }} allowDecimals={false} />
+                                  <Tooltip 
+                                    contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                                    labelStyle={{ fontWeight: 'bold' }}
+                                  />
+                                  <Bar dataKey="value" fill="#4f46e5" name="Häufigkeit animate-pulse">
+                                    {tagStats.map((entry, index) => (
+                                      <Cell 
+                                        key={`cell-${index}`} 
+                                        fill={index === 0 ? '#4f46e5' : index === 1 ? '#6366f1' : index === 2 ? '#818cf8' : '#a5b4fc'} 
+                                      />
+                                    ))}
+                                  </Bar>
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+
+                          {/* Interactive Schlagwortwolke */}
+                          <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex flex-col justify-between">
+                            <div>
+                              <p className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase mb-3">
+                                Interaktive Themenwolke
+                              </p>
+                              <p className="text-xs text-slate-500 mb-4 leading-normal">
+                                Klicken Sie auf ein Schlagwort, um direkt im Blog-Feed danach zu filtern.
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {tagStats.map(({ name, value }) => {
+                                  // Dynamic rendering size depending on weight
+                                  const sizeClass = value > 3 ? 'text-sm font-black text-indigo-700 bg-indigo-100/70 border-indigo-200' :
+                                                    value > 1 ? 'text-xs font-bold text-slate-700 bg-slate-200/60 border-slate-300' :
+                                                    'text-[11px] font-medium text-slate-500 bg-slate-100 border-slate-200';
+                                  return (
+                                    <button
+                                      key={name}
+                                      onClick={() => {
+                                        onTabChange('blog');
+                                      }}
+                                      className={`px-3 py-1.5 rounded-lg border transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1 ${sizeClass}`}
+                                      title={`${value} Beiträge mit diesem Schlagwort`}
+                                    >
+                                      <Tag className="h-3 w-3 opacity-60" />
+                                      <span>{name}</span>
+                                      <span className="text-[9px] opacity-50 font-mono">({value})</span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            <div className="mt-4 p-3.5 bg-indigo-50 text-indigo-950 border border-indigo-100 rounded-xl text-[11px] leading-relaxed flex gap-2">
+                              <Sparkles className="h-3.5 w-3.5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                              <span>
+                                <strong>Trend:</strong> Das Thema <span className="font-bold text-indigo-700">{tagStats[0]?.name}</span> verzeichnet das größte aktuelle Interesse gefolgt von <span className="font-bold text-indigo-700">{tagStats[1]?.name || 'n.a.'}</span>.
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 text-center py-10 font-mono">
+                          Noch keine Blog-Schlagworte erfasst. Legen Sie im Blog Beiträge mit Schlagworten an.
+                        </p>
+                      );
+                    })()}
+                  </div>
+                );
+              }
+
+              return null;
+            })}
           </div>
         </div></div>
       )}
@@ -2905,6 +3567,36 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                     >
                       <Paperclip className="w-5 h-5" />
                     </label>
+
+                    {/* Predefined Templates Quick Selector */}
+                    {data.communicationTemplates && data.communicationTemplates.length > 0 && (
+                      <div className="relative flex-shrink-0">
+                        <select
+                          title="Antwort-Vorlage einfügen"
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const selectedTpl = data.communicationTemplates?.find(t => t.id === val);
+                              if (selectedTpl) {
+                                setChatInput(prev => prev ? `${prev}\n${selectedTpl.content}` : selectedTpl.content);
+                              }
+                            }
+                            // Reset select value
+                            e.target.value = '';
+                          }}
+                          className="bg-slate-100 hover:bg-slate-250 border border-slate-250 text-slate-705 font-bold px-2.5 py-3 rounded-xl text-xs font-sans outline-none cursor-pointer max-w-[120px] transition-all"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>📋 Vorlage...</option>
+                          {data.communicationTemplates
+                            .filter(t => t.type === 'chat' || t.type === 'all')
+                            .map(t => (
+                              <option key={t.id} value={t.id}>{t.title}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                    )}
 
                     <input
                       type="text"
@@ -4290,8 +4982,8 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                     <div className="flex flex-wrap gap-1.5">
                       {[
                         { label: 'Stundensatz Beratung', title: 'Consulting Honorar / Stundennachweis', price: 150 },
-                        { label: 'Lizenzgebühr Basic', title: 'Kraftwerk Module Lizenzgebühr (Monatlich)', price: 450 },
-                        { label: 'CMS Setup', title: 'Kraftwerk Core Systemeinrichtung und API-Deploy', price: 290 },
+                        { label: 'Lizenzgebühr Basic', title: 'Aura Module Lizenzgebühr (Monatlich)', price: 450 },
+                        { label: 'CMS Setup', title: 'Aura Core Systemeinrichtung und API-Deploy', price: 290 },
                         { label: 'Plugin-Entwicklung', title: 'Custom Plugin-Entwicklung & Modul-Anpassung', price: 590 }
                       ].map(preset => (
                         <button
@@ -4477,7 +5169,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                   <div className="grid grid-cols-2 gap-10 mb-12">
                     <div>
                       <span className="text-[8px] text-slate-455 border-b border-slate-200 block pb-1.5 mb-2 font-mono uppercase tracking-wide">
-                        Kraftwerk Systems • Musterstraße 12 • 12345 Musterstadt
+                        Aura Systems • Musterstraße 12 • 12345 Musterstadt
                       </span>
                       {(() => {
                         const cust = data.customers.find(c => c.id === invoicePreviewObject.customerId);
@@ -4578,7 +5270,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                   {/* Digital seal signature stamp */}
                   <div className="mt-10 pt-4 border-t border-dashed border-slate-100 flex items-center justify-between font-mono text-[8px] text-slate-400">
                     <span>SEAL HASH: HMAC-SHA256-{invoicePreviewObject.id.substring(4, 16).toUpperCase()}</span>
-                    <span>Validierter Original-Systembeleg der Kraftwerk Systems Musterstadt</span>
+                    <span>Validierter Original-Systembeleg der Aura Systems Musterstadt</span>
                   </div>
                 </div>
               </div>
@@ -4980,7 +5672,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                     <input
                       type="text"
                       className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm placeholder-slate-400 transition-all font-medium text-slate-900"
-                      placeholder="z.B. Kraftwerk Suite"
+                      placeholder="z.B. Aura Suite"
                       value={data.settings?.siteHeaderName || ''}
                       onChange={(e) => {
                         onDataChange((prev: CRMData) => ({
@@ -5005,7 +5697,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                     <input
                       type="text"
                       className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm placeholder-slate-400 transition-all font-medium text-slate-900"
-                      placeholder="z.B. Kraftwerk Suite - Consulting & Software"
+                      placeholder="z.B. Aura Suite - Consulting & Software"
                       value={data.settings?.siteTitle || ''}
                       onChange={(e) => {
                         onDataChange((prev: CRMData) => ({
@@ -5048,6 +5740,284 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
                   </span>
                 </div>
 
+                {/* --- FRONTEND APPEARANCE & BRAND DESIGN TEMPLATE SELECTOR --- */}
+                <div className="border-t border-slate-200/60 pt-6 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <Palette className="h-4.5 w-4.5 text-indigo-650" />
+                      Frontend-Aussehen & Design-Template definieren
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Wählen Sie ein perfekt abgestimmtes Design-Konzept. Das gewählte Theme steuert Typografie, Kontrastflächen und Farbpaletten des Frontend-Auftritts in Echtzeit.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {STYLE_TEMPLATES.map((tmpl) => {
+                      const isSelected = (data.settings?.activeTemplateId || 'slate-modern') === tmpl.id;
+                      return (
+                        <button
+                          key={tmpl.id}
+                          type="button"
+                          onClick={() => {
+                            onDataChange((prev: CRMData) => ({
+                              ...prev,
+                              settings: {
+                                ...(prev.settings || ({} as any)),
+                                activeTemplateId: tmpl.id
+                              }
+                            }));
+                          }}
+                          className={`text-left p-4 rounded-xl border transition-all relative flex flex-col justify-between h-36 cursor-pointer ${
+                            isSelected 
+                              ? 'border-indigo-600 bg-indigo-50/20 ring-2 ring-indigo-500/10' 
+                              : 'border-slate-200 bg-white hover:border-slate-350 hover:bg-slate-50/40'
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5 leading-none">
+                                {tmpl.name}
+                                {isSelected && (
+                                  <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                                )}
+                              </span>
+                              
+                              {/* Color Accent Preview Circles */}
+                              <div className="flex items-center gap-1">
+                                <span className={`w-3.5 h-3.5 rounded-full border border-slate-200 inline-block ${tmpl.bgSidebar.split(' ')[0]}`} title="Sidebar"></span>
+                                <span className={`w-3.5 h-3.5 rounded-full border border-slate-200 inline-block ${tmpl.primaryButton.split(' ')[0]}`} title="Button"></span>
+                                <span className={`w-3.5 h-3.5 rounded-full border border-slate-200 inline-block ${tmpl.bgMain.split(' ')[0]}`} title="Hintergrund"></span>
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-slate-500 leading-normal line-clamp-2">
+                              {tmpl.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[9px] font-mono text-slate-400">
+                            <span>Schriftart: <strong className="font-semibold">{tmpl.fontClass.replace('font-', '')}</strong></span>
+                            <span>Ecken: <strong className="font-semibold">{tmpl.roundedClass.replace('rounded-', '') || 'scharf'}</strong></span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* --- CORE MODULES CONFIGURATION TOGGLES --- */}
+                <div className="border-t border-slate-200/60 pt-6 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <Layers className="h-4.5 w-4.5 text-indigo-650" />
+                      Aktive Frontend-Module schalten
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Schalten Sie die Hauptbereiche des Portals ein oder aus. Deaktivierte Bereiche werden im Frontend für Kunden und Besucher automatisch ausgeblendet.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Webshop Toggle */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                      <input
+                        id="toggle-shop-enabled"
+                        type="checkbox"
+                        checked={data.settings?.shopEnabled !== false}
+                        onChange={(e) => {
+                          onDataChange((prev: CRMData) => ({
+                            ...prev,
+                            settings: {
+                              ...(prev.settings || ({} as any)),
+                              shopEnabled: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="h-4 w-4 mt-0.5 text-indigo-650 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
+                      />
+                      <label htmlFor="toggle-shop-enabled" className="text-xs cursor-pointer select-none space-y-0.5">
+                        <strong className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <ShoppingBag className="w-3.5 h-3.5 text-slate-600" />
+                          Webshop & Lizenzvertrieb aktiv
+                        </strong>
+                        <span className="text-slate-500 block leading-normal">
+                          Aktiviert die Webshop-Erweiterung ("Aura Boutique") mit Warenkorb, checkout, Bezahlmethoden und Bestellhistorie.
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* Blog Toggle */}
+                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                      <input
+                        id="toggle-blog-enabled"
+                        type="checkbox"
+                        checked={data.settings?.blogEnabled !== false}
+                        onChange={(e) => {
+                          onDataChange((prev: CRMData) => ({
+                            ...prev,
+                            settings: {
+                              ...(prev.settings || ({} as any)),
+                              blogEnabled: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="h-4 w-4 mt-0.5 text-indigo-650 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
+                      />
+                      <label htmlFor="toggle-blog-enabled" className="text-xs cursor-pointer select-none space-y-0.5">
+                        <strong className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-slate-600" />
+                          Fachblog & Newsroom aktiv
+                        </strong>
+                        <span className="text-slate-500 block leading-normal">
+                          Veröffentlicht Ihre Fachbeiträge, SEO-News und Ratgeber im Blog-Tab des öffentlichen Frontends.
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* --- WEBSHOP TAX & SHIPPING MANAGEMENT --- */}
+                <div className="border-t border-slate-200/60 pt-6 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                      <Receipt className="h-4.5 w-4.5 text-indigo-650" />
+                      E-Commerce Steuer- & Versandkonditionen
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Regeln Sie Mehrwertsteuerklassen, Standard-Versandpauschalen, Schwellenwerte für portofreien Versand und den Versanddienstleister.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
+                    
+                    {/* Steuersatz standardwert */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                        Inländischer Mehrwertsteuersatz (MwSt)
+                      </label>
+                      <div className="relative rounded-xl shadow-2xs">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          className="w-full pl-3.5 pr-10 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-mono text-slate-950"
+                          value={data.settings?.shopTaxRate ?? 19}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            onDataChange((prev: CRMData) => ({
+                              ...prev,
+                              settings: {
+                                ...(prev.settings || ({} as any)),
+                                shopTaxRate: isNaN(val) ? 19 : val
+                              }
+                            }));
+                          }}
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-mono font-bold text-slate-400 bg-slate-100/60 border-l border-slate-200 rounded-r-xl px-2.5">
+                          %
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block leading-normal">
+                        Der Prozentsatz wird für die Brutto/Netto-Darstellung im Checkout sowie für alle erzeugten Rechnungen herangezogen (Deutschland Standard: 19%).
+                      </span>
+                    </div>
+
+                    {/* Versandkostenpauschale */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                        Standard Paket-Versandkosten
+                      </label>
+                      <div className="relative rounded-xl shadow-2xs">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full pl-3 pr-12 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-mono text-slate-950"
+                          value={data.settings?.shopShippingFlat ?? 4.90}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            onDataChange((prev: CRMData) => ({
+                              ...prev,
+                              settings: {
+                                ...(prev.settings || ({} as any)),
+                                shopShippingFlat: isNaN(val) ? 4.90 : val
+                              }
+                            }));
+                          }}
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-mono font-bold text-slate-400 bg-slate-100/60 border-l border-slate-200 rounded-r-xl px-2.5">
+                          EUR
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block leading-normal">
+                        Basis-Versandpreis für den Transport physischer Güter oder Lizenzen (z.B. Box-Deliveries) per Paketpost.
+                      </span>
+                    </div>
+
+                    {/* Versandfrei-Schwelle */}
+                    <div className="space-y-1.5 mt-2 md:mt-0">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                        Kostenfreier Versand ab Bestellwert
+                      </label>
+                      <div className="relative rounded-xl shadow-2xs">
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="z.B. 50 (Leer lassen fürs Deaktivieren)"
+                          className="w-full pl-3 pr-12 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-mono text-slate-950"
+                          value={data.settings?.shopFreeShippingThreshold || ''}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value);
+                            onDataChange((prev: CRMData) => ({
+                              ...prev,
+                              settings: {
+                                ...(prev.settings || ({} as any)),
+                                shopFreeShippingThreshold: isNaN(val) ? undefined : val
+                              }
+                            }));
+                          }}
+                        />
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-xs font-mono font-bold text-slate-400 bg-slate-100/60 border-l border-slate-200 rounded-r-xl px-2.5">
+                          EUR
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400 block leading-normal">
+                        Kostenloser Versand wird ab Erreichen dieses Warenkorb-Bruttowerts automatisch gewährt (z.B. versandkostenfrei ab 50 €).
+                      </span>
+                    </div>
+
+                    {/* Standard Logistik Dienstleister */}
+                    <div className="space-y-1.5 mt-2 md:mt-0">
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                        Standard Logistik-Versanddienst (Carrier)
+                      </label>
+                      <div className="relative rounded-xl shadow-2xs">
+                        <input
+                          type="text"
+                          placeholder="z.B. DHL, UPS, Hermes..."
+                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-semibold text-slate-950"
+                          value={data.settings?.shopDefaultCarrier || 'DHL'}
+                          onChange={(e) => {
+                            onDataChange((prev: CRMData) => ({
+                              ...prev,
+                              settings: {
+                                ...(prev.settings || ({} as any)),
+                                shopDefaultCarrier: e.target.value
+                              }
+                            }));
+                          }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-400 block leading-normal">
+                        Dienstleister, der als Trägermarke im Checkout-Warenkorb und bei den Paketdaten genannt wird.
+                      </span>
+                    </div>
+
+                  </div>
+                </div>
+
                 {/* Info Note */}
                 <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 flex gap-3 text-xs text-indigo-700/95 leading-relaxed">
                   <Sparkles className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
@@ -5069,7 +6039,7 @@ export default function AdminCRM({ data, onDataChange, activeTab, isOnline, onOn
           <span>SYSTEM: DATENSCHUTZKONFORM (OFFLINE-MODUS)</span>
         </div>
         <div>
-          <span>KRAFTWERK CRM • ENTERPRISE PORTALS SUITE v4.1</span>
+          <span>AURA CRM • ENTERPRISE PORTALS SUITE v4.1</span>
         </div>
       </footer>
 

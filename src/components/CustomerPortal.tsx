@@ -110,8 +110,8 @@ interface PortfolioContract {
 const PORTFOLIO_CONTRACTS: PortfolioContract[] = [
   {
     id: 'pc1',
-    name: 'Kraftwerk Hosting & DNS',
-    insurer: 'Kraftwerk Cloud Core München',
+    name: 'Aura Hosting & DNS',
+    insurer: 'Aura Cloud Core München',
     policyNumber: 'HST-982-110-449',
     premium: 340.00,
     paymentInterval: 'Jahr',
@@ -133,8 +133,8 @@ const PORTFOLIO_CONTRACTS: PortfolioContract[] = [
   },
   {
     id: 'pc2',
-    name: 'Kraftwerk Core-Lizenz & Updates',
-    insurer: 'Kraftwerk Enterprise Suite',
+    name: 'Aura Core-Lizenz & Updates',
+    insurer: 'Aura Enterprise Suite',
     policyNumber: 'LIZ-CMS-509-11',
     premium: 520.00,
     paymentInterval: 'Jahr',
@@ -149,15 +149,15 @@ const PORTFOLIO_CONTRACTS: PortfolioContract[] = [
     details: [
       'Unbegrenzte Backend-Administratoren',
       'Echtzeit-Sicherheits-Patches und Minor-Updates',
-      'Zugang zur Kraftwerk-Pluginzentrale',
+      'Zugang zur Aura-Pluginzentrale',
       'Unbegrenzte API-Abrufe des integrierten Support-Bots',
       'Granulare Rechtevergabe im Admin-Dashboard'
     ]
   },
   {
     id: 'pc3',
-    name: 'Kraftwerk Mobile Gateway (PWA)',
-    insurer: 'Kraftwerk Mobile Service',
+    name: 'Aura Mobile Gateway (PWA)',
+    insurer: 'Aura Mobile Service',
     policyNumber: 'APP-MOB-224-88',
     premium: 480.00,
     paymentInterval: 'Jahr',
@@ -179,8 +179,8 @@ const PORTFOLIO_CONTRACTS: PortfolioContract[] = [
   },
   {
     id: 'pc4',
-    name: 'Kraftwerk API Support & Premium-Wartung',
-    insurer: 'Kraftwerk Helpdesk',
+    name: 'Aura API Support & Premium-Wartung',
+    insurer: 'Aura Helpdesk',
     policyNumber: 'SUP-220-334-11',
     premium: 290.00,
     paymentInterval: 'Jahr',
@@ -202,8 +202,8 @@ const PORTFOLIO_CONTRACTS: PortfolioContract[] = [
   },
   {
     id: 'pc5',
-    name: 'Kraftwerk Cloud-CDN Datenspeicher',
-    insurer: 'Kraftwerk Cloud Speicher',
+    name: 'Aura Cloud-CDN Datenspeicher',
+    insurer: 'Aura Cloud Speicher',
     policyNumber: 'CDN-445-981-22',
     premium: 210.05,
     paymentInterval: 'Jahr',
@@ -583,7 +583,7 @@ END:VCARD`;
         if (lowerText.match(/^(hallo|hi|hey|guten tag|servus|moin|guten morgen|guten abend|grüß gott|gruezi)/i)) {
           botResponseContentStr = "Ein herzliches Hallo, {Vorname}! Schön, dass Sie sich melden. Wie kann ich Sie heute bei Ihren CMS- und Softwareprojekten unterstützen?";
         } else if (lowerText.includes("wer bist du") || lowerText.includes("was bist du") || lowerText.includes("bist du eine ki") || lowerText.includes("bot") || lowerText.includes("assistent")) {
-          botResponseContentStr = "Ich bin der digitale KI-Assistent der Kraftwerk Suite. Ich unterstütze Sie bei Fragen zu unseren Entwicklungsphasen, Plugins, Dokumentenuploads oder Terminabstimmungen hier im Serviceportal.";
+          botResponseContentStr = "Ich bin der digitale KI-Assistent der Aura Suite. Ich unterstütze Sie bei Fragen zu unseren Entwicklungsphasen, Plugins, Dokumentenuploads oder Terminabstimmungen hier im Serviceportal.";
         } else if (lowerText.includes("anika") || lowerText.includes("kraft") || lowerText.includes("inhaberin") || lowerText.includes("entwicklerin") || lowerText.includes("beraterin") || lowerText.includes("berater") || lowerText.includes("mustermann")) {
           botResponseContentStr = "Herr Max Mustermann ist Ihr Premium CMS- und Software-Consultant. Er berät Kunden hochprofessionell zu ganzheitlichen CMS-Integrationen, Warenwirtschaftssystemen, Webshops, Support-Bots sowie Social-Media Recruiting.";
         } else if (lowerText.includes("danke") || lowerText.includes("vielen dank") || lowerText.includes("super") || lowerText.includes("klasse") || lowerText.includes("toll") || lowerText.includes("#")) {
@@ -744,7 +744,7 @@ END:VCARD`;
 
     const exportObject = {
       timestamp: new Date().toISOString(),
-      legalParagraph: "Datenexport gemäss Art. 15 DSGVO (Auskunftsrecht der betroffenen Person). Alle Daten stammen aus dem E2E-verschlüsselten Mandantenportal der Kraftwerk - Enterprise Suite.",
+      legalParagraph: "Datenexport gemäss Art. 15 DSGVO (Auskunftsrecht der betroffenen Person). Alle Daten stammen aus dem E2E-verschlüsselten Mandantenportal der Aura - Enterprise Suite.",
       dataCategory: {
         customerProfile: {
           id: customer.id,
@@ -1532,7 +1532,7 @@ END:VCARD`;
                     <div>
                       <h4 className="font-bold text-sm text-white">Max Mustermann</h4>
                       <p className="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider font-mono">Enterprise CMS Architect</p>
-                      <p className="text-[9px] text-slate-400">Plattform: Kraftwerk Suite v4.1</p>
+                      <p className="text-[9px] text-slate-400">Plattform: Aura Suite v4.1</p>
                     </div>
                   </div>
                   
@@ -2659,7 +2659,7 @@ END:VCARD`;
                   <div className="grid grid-cols-2 gap-10 mb-12">
                     <div>
                       <span className="text-[8px] text-slate-400 border-b border-slate-200 block pb-1.5 mb-2 font-mono uppercase tracking-wide">
-                        Kraftwerk Systems • Musterstraße 12 • 12345 Musterstadt
+                        Aura Systems • Musterstraße 12 • 12345 Musterstadt
                       </span>
                       <div className="space-y-1 font-sans text-[11px] text-slate-800">
                         <p className="font-bold">{customer.name}</p>
@@ -2750,7 +2750,7 @@ END:VCARD`;
 
                   <div className="mt-10 pt-4 border-t border-dashed border-slate-100 flex items-center justify-between font-mono text-[8px] text-slate-400">
                     <span>SEAL HASH: HMAC-SHA256-{selectedClientInvoice.id.substring(4, 16).toUpperCase()}</span>
-                    <span>Validierter Original-Systembeleg der Kraftwerk Systems Musterstadt</span>
+                    <span>Validierter Original-Systembeleg der Aura Systems Musterstadt</span>
                   </div>
                 </div>
               </div>
@@ -3194,7 +3194,7 @@ END:VCARD`;
                 </div>
                 <div>
                   <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-mono font-bold tracking-wider px-2 py-0.5 rounded border border-emerald-400/20 uppercase">
-                    Kraftwerk Companion
+                    Aura Companion
                   </span>
                   <h3 className="text-base font-bold text-white mt-0.5">
                     System-Dashboard-App aktivieren
@@ -3213,7 +3213,7 @@ END:VCARD`;
             {/* Modal Content */}
             <div className="p-6 space-y-5 text-slate-700">
               <p className="text-xs text-slate-500 leading-relaxed">
-                Holen Sie Ihr CMS-Dashboard auf Ihr Smartphone! Mit der <strong>Kraftwerk Companion App</strong> haben Sie Ihre Lizenzen, Systemstatus-Meldungen und direkten Draht zur Administration immer in der Hosentasche.
+                Holen Sie Ihr CMS-Dashboard auf Ihr Smartphone! Mit der <strong>Aura Companion App</strong> haben Sie Ihre Lizenzen, Systemstatus-Meldungen und direkten Draht zur Administration immer in der Hosentasche.
               </p>
 
               {/* Steps Layout */}
@@ -3242,7 +3242,7 @@ END:VCARD`;
                     <rect x="38" y="70" width="8" height="18" fill="currentColor" />
                     <rect x="52" y="78" width="12" height="12" fill="currentColor" />
                     <circle cx="50" cy="50" r="10" fill="#10b981" />
-                    <text x="47" y="54" fill="white" fontSize="11" fontWeight="bold">K</text>
+                    <text x="47" y="54" fill="white" fontSize="11" fontWeight="bold">A</text>
                   </svg>
                   <span className="text-[9px] font-mono font-bold text-slate-400 mt-2 text-center uppercase tracking-wide">
                     QR-Code Scannen
@@ -3252,7 +3252,7 @@ END:VCARD`;
                 <div className="space-y-3">
                   <div>
                     <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">Schritt 1</h4>
-                    <p className="text-[10px] text-slate-500">QR-Code scannen, um die Kraftwerk-App für iOS oder Android zu laden und verknüpfen.</p>
+                    <p className="text-[10px] text-slate-500">QR-Code scannen, um die Aura-App für iOS oder Android zu laden und verknüpfen.</p>
                   </div>
                   <div>
                     <h4 className="text-[11px] font-bold text-slate-800 uppercase tracking-wide">Schritt 2</h4>

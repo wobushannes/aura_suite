@@ -5,7 +5,7 @@ import Sidebar from './components/Sidebar';
 import AdminCRM from './components/AdminCRM';
 import CustomerPortal from './components/CustomerPortal';
 import PublicFrontend from './components/PublicFrontend';
-import { Lock, User, FileText, LayoutDashboard, Key, ShieldAlert, Home } from 'lucide-react';
+import { Lock, User, FileText, LayoutDashboard, Key, ShieldAlert, Home, Sparkles } from 'lucide-react';
 
 export default function App() {
   // --- APPLICATION STATE ---
@@ -20,6 +20,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [simulatedCustomerId, setSimulatedCustomerId] = useState<string | null>(null);
   const [showLogin, setShowLogin] = useState<boolean>(false);
+  
+  // --- GLOBAL SEARCH BAR SYNC STATES ---
+  const [forcedCustomerSearch, setForcedCustomerSearch] = useState('');
+  const [forcedFileSearch, setForcedFileSearch] = useState('');
+  const [forcedActiveChatCustomerId, setForcedActiveChatCustomerId] = useState<string | null>(null);
   
   // --- CONNECTION MODE (ONLINE/OFFLINE SYNC) ---
   const [isOnline, setIsOnline] = useState<boolean>(() => {
@@ -54,7 +59,7 @@ export default function App() {
     if (data.settings?.siteTitle) {
       document.title = data.settings.siteTitle;
     } else {
-      document.title = 'Kraftwerk Suite';
+      document.title = 'Aura Suite';
     }
     
     // Update meta description safely
@@ -64,7 +69,7 @@ export default function App() {
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-    metaDescription.setAttribute('content', data.settings?.siteSeoDescription || 'Kraftwerk Suite Enterprise Portal');
+    metaDescription.setAttribute('content', data.settings?.siteSeoDescription || 'Aura Suite Enterprise Portal');
   }, [data.settings?.siteTitle, data.settings?.siteSeoDescription]);
 
   // Load backend data on startup and poll periodically to stay in sync with server state
@@ -230,12 +235,12 @@ export default function App() {
   // --- RENDERING PAGE CHASSIS ---
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-900 font-sans overflow-hidden antialiased">
-      {/* Dynamic Kraftwerk Workspace Cockpit Switcher Bar */}
+      {/* Dynamic Aura Workspace Cockpit Switcher Bar */}
       <div className="h-11 bg-slate-950 border-b border-slate-800 px-4 flex items-center justify-between text-xs text-slate-300 font-sans z-50 flex-shrink-0 select-none">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-            <span className="font-mono font-bold tracking-wider text-[10px] text-indigo-400 uppercase">Kraftwerk Workspace Cockpit</span>
+            <span className="font-mono font-bold tracking-wider text-[10px] text-indigo-400 uppercase">Aura Workspace Cockpit</span>
           </div>
           <span className="text-slate-800">|</span>
           <div className="text-slate-400 font-medium">
@@ -362,6 +367,19 @@ export default function App() {
             botEnabled={data.settings?.botEnabled !== false}
             chatEnabled={data.settings?.chatEnabled !== false}
             siteHeaderName={data.settings?.siteHeaderName}
+            data={data}
+            onGlobalSearchSelect={(tab, searchData) => {
+              setActiveTab(tab);
+              if (searchData?.customerSearch) {
+                setForcedCustomerSearch(searchData.customerSearch);
+              }
+              if (searchData?.fileSearch) {
+                setForcedFileSearch(searchData.fileSearch);
+              }
+              if (searchData?.chatCustomerId) {
+                setForcedActiveChatCustomerId(searchData.chatCustomerId);
+              }
+            }}
           />
           
           <main className="flex-1 flex flex-col h-full overflow-hidden">
@@ -413,6 +431,12 @@ export default function App() {
                   onTabChange={setActiveTab}
                   onSimulateCustomer={setSimulatedCustomerId}
                   onPreviewPublicFrontend={() => setActiveTab('preview-public')}
+                  forcedCustomerSearch={forcedCustomerSearch}
+                  onClearForcedCustomerSearch={() => setForcedCustomerSearch('')}
+                  forcedFileSearch={forcedFileSearch}
+                  onClearForcedFileSearch={() => setForcedFileSearch('')}
+                  forcedActiveChatCustomerId={forcedActiveChatCustomerId || undefined}
+                  onClearForcedActiveChatCustomerId={() => setForcedActiveChatCustomerId(null)}
                 />
               )
             ) : (
@@ -447,7 +471,7 @@ export default function App() {
                 <FileText className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight uppercase leading-none font-sans text-white">Kraftwerk Suite</h1>
+                <h1 className="text-xl font-bold tracking-tight uppercase leading-none font-sans text-white">Aura Suite</h1>
                 <p className="text-[10px] text-slate-400 font-mono tracking-wider mt-0.5">Offline-Zentrale & Corporate Vault</p>
               </div>
             </div>
@@ -509,6 +533,25 @@ export default function App() {
                 >
                   Mandant (Kundenportal)
                 </button>
+              </div>
+
+              {/* Standard-Zugangsdaten Info-Feld */}
+              <div className="p-3.5 bg-indigo-950/40 border border-indigo-900 rounded-xl space-y-1.5 text-xs text-indigo-200">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <span>Standard-Zugangsdaten</span>
+                </div>
+                {loginRole === 'admin' ? (
+                  <p className="leading-relaxed font-sans text-[11px] text-slate-300">
+                    Benutzername: <strong className="text-white font-mono bg-indigo-900/60 px-1 py-0.5 rounded">admin</strong><br />
+                    Passwort: <strong className="text-white font-mono bg-indigo-900/60 px-1 py-0.5 rounded">admin123</strong>
+                  </p>
+                ) : (
+                  <p className="leading-relaxed font-sans text-[11px] text-slate-300">
+                    Benutzername: <strong className="text-white font-mono bg-indigo-900/60 px-1 py-0.5 rounded">max.muster</strong> (Bzw. <span className="font-mono text-white">anna.schmidt</span> / <span className="font-mono text-white">tom.weber</span>)<br />
+                    Passwort: <strong className="text-white font-mono bg-indigo-900/60 px-1 py-0.5 rounded">kunde123</strong>
+                  </p>
+                )}
               </div>
 
               {/* Login error warnings card */}
@@ -621,6 +664,8 @@ export default function App() {
             onDataChange={setData}
             onOpenLogin={() => setShowLogin(true)}
             isAdminPreview={false}
+            session={session}
+            onLogout={handleLogout}
           />
         </div>
       )}

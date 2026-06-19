@@ -200,7 +200,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
     {
       id: "rule-kontakt",
       triggerKeywords: ["kontakt", "support", "telefon", "email", "mail", "anrufen", "telefonnummer", "erreichbar", "öffnungszeiten", "adresse", "büro"],
-      answer: "Sie erreichen das IT- und Beratungsbüro der Kraftwerk-Unternehmensberatung telefonisch von Montag bis Freitag von 08:30 bis 17:30 Uhr unter **+49 1234 567890** oder per E-Mail unter **support@musterdomain.de**. Unser Team berät Kunden bundesweit komplett digital. Für hochsensible Daten nutzen Sie bitte stets den integrierten Chat mit E2E-Verschlüsselung hier im Portal.",
+      answer: "Sie erreichen das IT- und Beratungsbüro der Aura-Unternehmensberatung telefonisch von Montag bis Freitag von 08:30 bis 17:30 Uhr unter **+49 1234 567890** oder per E-Mail unter **support@musterdomain.de**. Unser Team berät Kunden bundesweit komplett digital. Für hochsensible Daten nutzen Sie bitte stets den integrierten Chat mit E2E-Verschlüsselung hier im Portal.",
       usagesCount: 0,
       lastEditedBy: "System"
     },
@@ -320,7 +320,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
   products: [
     {
       id: "prod-cms-core",
-      name: "Kraftwerk Suite Enterprise Jahreslizenz",
+      name: "Aura Suite Enterprise Jahreslizenz",
       sku: "CMS-ENT-001",
       description: "Vollständige Jahreslizenz inklusive aller Core-Updates, unlimitierter Mandantenspeicher-Kapazität und SSL-Integritätsprüfung.",
       price: 1499.00,
@@ -330,7 +330,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
     },
     {
       id: "prod-cms-booking",
-      name: "Kraftwerk Booking Pro Add-on",
+      name: "Aura Booking Pro Add-on",
       sku: "CMS-BKP-005",
       description: "Ermöglicht Online-Terminbuchen direkt im Frontend, automatische Synchronisation mit dem Kalender und E-Mail-Notizen.",
       price: 289.00,
@@ -340,7 +340,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
     },
     {
       id: "prod-cms-shop",
-      name: "Kraftwerk Webshop Core Add-on",
+      name: "Aura Webshop Core Add-on",
       sku: "CMS-SHP-002",
       description: "E-Commerce Modul inklusive Echtzeit-Lagerbestand, Checkout und integriertem Stripe/PayPal Gateway.",
       price: 499.00,
@@ -350,7 +350,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
     },
     {
       id: "prod-cms-ai",
-      name: "Kraftwerk AI Business Assistant",
+      name: "Aura AI Business Assistant",
       sku: "CMS-AI-009",
       description: "Künstliche Intelligenz zur automatischen Wissensanlernung und Klärung von ungelösten Mandantenfragen rund um die Uhr.",
       price: 199.00,
@@ -366,7 +366,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
       title: "Maximale Datensicherheit: Warum wir auf Offline-First und lokale Verschlüsselung setzen",
       slug: "maximale-datensicherheit-offline-first",
       summary: "In Zeiten steigender Cyberangriffe ist lokaler Datenschutz das wertvollste Gut. Wir erklären unser integriertes Sicherheitskonzept.",
-      content: "Die digitale Transformation schreitet rasant voran, doch mit ihr steigen auch die Risiken für sensible Unternehmensdaten. Bei Kraftwerk Suite haben wir uns bewusst für eine kompromisslose 'Offline-First' Systemarchitektur entschieden. \n\nDas bedeutet für Sie: Sämtliche Mandantendaten, Verträge, Video-Schnittmaterialien und interne Chats verbleiben primär in einer sicheren, lokalen Sandbox direkt auf Ihrem Rechner. Es gibt keine ungeschützten Cloud-Datenbanken oder unverschlüsselte API-Schnittstellen im Standardbetrieb.\n\nDurch den Einsatz moderner AES-256 Verschlüsselungsverfahren stellen wir sicher, dass nur berechtigte Personen Zugriff erhalten. So bleiben Ihre Geschäftsgeheimnisse zu jeder Sekunde geschützt.",
+      content: "Die digitale Transformation schreitet rasant voran, doch mit ihr steigen auch die Risiken für sensible Unternehmensdaten. Bei Aura Suite haben wir uns bewusst für eine kompromisslose 'Offline-First' Systemarchitektur entschieden. \n\nDas bedeutet für Sie: Sämtliche Mandantendaten, Verträge, Video-Schnittmaterialien und interne Chats verbleiben primär in einer sicheren, lokalen Sandbox direkt auf Ihrem Rechner. Es gibt keine ungeschützten Cloud-Datenbanken oder unverschlüsselte API-Schnittstellen im Standardbetrieb.\n\nDurch den Einsatz moderner AES-256 Verschlüsselungsverfahren stellen wir sicher, dass nur berechtigte Personen Zugriff erhalten. So bleiben Ihre Geschäftsgeheimnisse zu jeder Sekunde geschützt.",
       category: "Sicherheit",
       status: "Published",
       createdAt: "2026-06-01T10:00:00.000Z",
@@ -400,7 +400,7 @@ export const INITIAL_MOCK_DATA: CRMData = {
       title: "Modulare Software-Architekturen: Warum monolithische Riesen ausgedient haben",
       slug: "modulare-software-architekturen-vorteile",
       summary: "Warum überladene Systeme die Agilität einbremsen – und wie hochgradig anpassbare Plug-and-Play Dashboards die Effizienz steigern.",
-      content: "Große Enterprise-Softwarelösungen leiden oft unter ihrer eigenen Komplexität. Benutzer fühlen sich von Navigationsleisten mit Hunderten von Unterpunkten erdrückt, und die Wartungskosten steigen ins Unermessliche.\n\nDas Gegenmittel ist ein granular steuerbares System. Bei der Kraftwerk Suite steuert der Administrator die Sichtbarkeit sämtlicher Hauptmodule flexibel aus dem Kontrollzentrum heraus. \n\nIst ein Feature wie das E-Commerce-System oder das Videoportal vorübergehend nicht mehr aktiv, blendet das System sämtliche Menüpunkte, Rechnungsverläufe und Benutzeroberflächen in Echtzeit und datensicher aus. Das ist modernes Softwaredesign: aufgeräumt, reaktionsschnell und maßgeschneidert auf Ihre betrieblichen Anforderungen.",
+      content: "Große Enterprise-Softwarelösungen leiden oft unter ihrer eigenen Komplexität. Benutzer fühlen sich von Navigationsleisten mit Hunderten von Unterpunkten erdrückt, und die Wartungskosten steigen ins Unermessliche.\n\nDas Gegenmittel ist ein granular steuerbares System. Bei der Aura Suite steuert der Administrator die Sichtbarkeit sämtlicher Hauptmodule flexibel aus dem Kontrollzentrum heraus. \n\nIst ein Feature wie das E-Commerce-System oder das Videoportal vorübergehend nicht mehr aktiv, blendet das System sämtliche Menüpunkte, Rechnungsverläufe und Benutzeroberflächen in Echtzeit und datensicher aus. Das ist modernes Softwaredesign: aufgeräumt, reaktionsschnell und maßgeschneidert auf Ihre betrieblichen Anforderungen.",
       category: "Software-Design",
       status: "Published",
       createdAt: "2026-06-15T14:20:00.000Z",
@@ -454,6 +454,34 @@ export const INITIAL_MOCK_DATA: CRMData = {
       createdAt: "2026-06-17T11:45:00.000Z",
       authorName: "System-Admin",
       comments: []
+    }
+  ],
+  communicationTemplates: [
+    {
+      id: "tpl-welcome",
+      title: "Willkommens-Nachricht (Onboarding)",
+      subject: "Willkommen bei der Aura Suite – Ihre nächsten Schritte",
+      content: "Sehr geehrte Damen und Herren,\n\nvielen Dank für Ihr Vertrauen in Aura Enterprise Solutions. Ihr Mandanten-Portal wurde erfolgreich freigeschaltet.\n\nIn Ihrer Roadmap finden Sie die ersten vorbereiteten Schritte. Bitte laden Sie die erforderlichen DSGVO-Dokumente hoch und buchen Sie Ihren ersten Onboarding-Termin im Kalender.\n\nMit freundlichen Grüßen,\nIhr Serviceteam",
+      type: "all",
+      category: "Onboarding",
+      createdAt: "2026-06-19T03:00:00.000Z"
+    },
+    {
+      id: "tpl-invoice-remind",
+      title: "Zahlungserinnerung (Rechnung)",
+      subject: "Zahlungserinnerung: Offener Rechnungsbetrag",
+      content: "Hallo,\n\nwir haben festgestellt, dass Ihre letzte Lizenzrechnung noch ausstehend ist. Bitte begleichen Sie den offenen Betrag zeitnah über die angegebene IBAN, um eine Unterbrechung Ihrer CMS-Dienste zu vermeiden.\n\nFalls Sie bereits überwiesen haben, betrachten Sie diese Nachricht bitte als gegenstandslos.\n\nBeste Grüße,\nBuchhaltung",
+      type: "email",
+      category: "Buchhaltung",
+      createdAt: "2026-06-19T03:10:00.000Z"
+    },
+    {
+      id: "tpl-quick-help",
+      title: "Schnelle Hilfe / Support-Antwort",
+      content: "Hallo,\n\nvielen Dank für Ihre Anfrage. Wir haben Ihr Anliegen aufgenommen. Unser technischer Dienst prüft dies bereits in der Offline-Zentrale. Wir melden uns in Kürze mit einer Lösung bei Ihnen.\n\nViele Grüße,\nSupport-Team",
+      type: "chat",
+      category: "Support",
+      createdAt: "2026-06-19T03:15:00.000Z"
     }
   ]
 };

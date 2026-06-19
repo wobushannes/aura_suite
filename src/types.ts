@@ -74,6 +74,16 @@ export interface RoadmapTemplate {
   }[];
 }
 
+export interface CommunicationTemplate {
+  id: string;
+  title: string;
+  subject?: string;
+  content: string;
+  type: 'email' | 'chat' | 'all';
+  category: string;
+  createdAt: string;
+}
+
 export interface InvoiceItem {
   id: string;
   description: string;
@@ -248,6 +258,15 @@ export interface SystemSettings {
   siteTitle?: string;
   siteSeoDescription?: string;
   siteHeaderName?: string;
+  shopTaxRate?: number;
+  shopShippingFlat?: number;
+  shopFreeShippingThreshold?: number;
+  shopDefaultCarrier?: string;
+  dashboardWidgetsOrder?: string[];
+  dashboardWidgetsVisibility?: Record<string, boolean>;
+  publicWidgetsOrder?: string[];
+  publicWidgetsVisibility?: Record<string, boolean>;
+  publicLayoutModusEnabled?: boolean;
 }
 
 export interface CRMData {
@@ -265,4 +284,5 @@ export interface CRMData {
   auditLogs?: AuditLog[];
   settings?: SystemSettings;
   suppliers?: Supplier[];
+  communicationTemplates?: CommunicationTemplate[];
 }

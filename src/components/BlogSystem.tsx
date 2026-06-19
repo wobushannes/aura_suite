@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { BlogPost, BlogPostComment, CRMData } from '../types';
 import { 
-  BookOpen, Plus, Search, Edit, Trash, MessageSquare, Check, ShieldAlert, FileText, ChevronRight, ArrowLeft, Clock, Calendar, CheckSquare, Sparkles, Tag, Globe, MessageCircle
+  BookOpen, Plus, Search, Edit, Trash, MessageSquare, Check, ShieldAlert, FileText, ChevronRight, ArrowLeft, Clock, Calendar, CheckSquare, Sparkles, Tag, Globe, MessageCircle, Sliders, BarChart3, Cloud, Settings, Key
 } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 interface BlogSystemProps {
   role: 'admin' | 'customer';
@@ -16,8 +17,13 @@ interface BlogSystemProps {
 
 export default function BlogSystem({ role, customerName = '', customerEmail = '', data, onDataChange, logAction, activeTemplate }: BlogSystemProps) {
   const isAdmin = role === 'admin';
-  const [activeView, setActiveView] = useState<'list' | 'single' | 'editor'>('list');
+  const [activeView, setActiveView] = useState<'list' | 'single' | 'editor' | 'tagmanagement'>('list');
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+
+  // Tag Management states
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+  const [editedTagName, setEditedTagName] = useState<string>('');
+  const [newTagName, setNewTagName] = useState<string>('');
 
   // Search & Tag Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -187,6 +193,54 @@ export default function BlogSystem({ role, customerName = '', customerEmail = ''
     }
   };
 
+  // WordPress-style Tag Operations
+  const handleRenameTag = (oldTag: string, newTag: string) => {
+    if (!newTag.trim()) return;
+    const cleanedOld = oldTag.trim().toLowerCase();
+    const cleanedNew = newTag.trim();
+    
+    const updated = posts.map(p => {
+      if (!p.category) return p;
+      const tags = p.category.split(',').map(t => t.trim());
+      const updatedTags = tags.map(t => t.toLowerCase() === cleanedOld ? cleanedNew : t);
+      // Ensure unique and filtered
+      const unique = Array.from(new Set(updatedTags)).filter(Boolean);
+      return {
+        ...p,
+        category: unique.join(', ')
+      };
+    });
+
+    onDataChange({ ...data, blogPosts: updated });
+    logAction('Schlagwort umbenannt', `Tag '${oldTag}' wurde weltweit umbenannt in '${cleanedNew}'`);
+    setEditingTag(null);
+  };
+
+  const handleDeleteTag = (tagToDelete: string) => {
+    if (!confirm(`Möchten Sie das Schlagwort '${tagToDelete}' wirklich aus allen Blogbeiträgen löschen?`)) return;
+    const cleanedTarget = tagToDelete.trim().toLowerCase();
+    
+    const updated = posts.map(p => {
+      if (!p.category) return p;
+      const tags = p.category.split(',').map(t => t.trim());
+      const filtered = tags.filter(t => t.toLowerCase() !== cleanedTarget);
+      return {
+        ...p,
+        category: filtered.join(', ')
+      };
+    });
+
+    onDataChange({ ...data, blogPosts: updated });
+    logAction('Schlagwort gelöscht', `Tag '${tagToDelete}' wurde aus allen Beiträgen entfernt`);
+  };
+
+  const handleCreateTag = (newTag: string) => {
+    if (!newTag.trim()) return;
+    const cleaned = newTag.trim();
+    alert(`Schlagwort '${cleaned}' erfolgreich registriert. Schlagworte werden aktiv im System gelistet, sobald sie im Beitrags-Editor einem Beitrag (durch Komma getrennt) zugewiesen werden.`);
+    setNewTagName('');
+  };
+
   // Submit Comments
   const handleCommentSubmit = (e: React.FormEvent, postId: string) => {
     e.preventDefault();
@@ -290,25 +344,56 @@ export default function BlogSystem({ role, customerName = '', customerEmail = ''
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-indigo-600" />
-            Blog
+            Blog-System
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Persönliche Beiträge, Ankündigungen und Hintergrundartikel.
+            Persönliche Beiträge, Ankündigungen, Hintergrundartikel und Schlagwort-Steuerung.
           </p>
+
+          {/* Admin Tab buttons below header */}
+          {isAdmin && (
+            <div className="flex bg-slate-100 p-1 rounded-xl mt-3.5 space-x-1 inline-flex text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => { setActiveView('list'); setSelectedPost(null); }}
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeView === 'list' || activeView === 'single' || activeView === 'editor'
+                    ? 'bg-white text-slate-850 shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Beiträge ({posts.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveView('tagmanagement'); setSelectedPost(null); }}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                  activeView === 'tagmanagement'
+                    ? 'bg-white text-slate-850 shadow-xs font-bold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Tag className="h-3.5 w-3.5 text-indigo-500" />
+                Schlagwort-Zentrale
+              </button>
+            </div>
+          )}
         </div>
 
-        {isAdmin && activeView === 'list' && (
-          <button
-            onClick={() => {
-              setSelectedPost(null);
-              setPostForm({ title: '', slug: '', content: '', summary: '', image: '', category: 'Allgemein', status: 'Published' });
-              setActiveView('editor');
-            }}
-            className={`px-4 py-2.5 text-xs font-bold flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition-all cursor-pointer`}
-          >
-            <Plus className="h-4 w-4" /> Neuen Beitrag erstellen
-          </button>
-        )}
+        <div className="flex gap-2">
+          {isAdmin && activeView === 'list' && (
+            <button
+              onClick={() => {
+                setSelectedPost(null);
+                setPostForm({ title: '', slug: '', content: '', summary: '', image: '', category: 'Allgemein', status: 'Published' });
+                setActiveView('editor');
+              }}
+              className={`px-4 py-2.5 text-xs font-bold flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-xs transition-all cursor-pointer`}
+            >
+              <Plus className="h-4 w-4" /> Neuen Beitrag erstellen
+            </button>
+          )}
+        </div>
       </div>
 
       {/* VIEW 1: MAIN BLOG FEED (WordPress-Style With Widget Sidebar) */}
@@ -903,6 +988,206 @@ export default function BlogSystem({ role, customerName = '', customerEmail = ''
             </button>
           </div>
         </form>
+      )}
+
+      {/* VIEW 4: WORDPRESS-STYLE TAG MANAGEMENT & ANALYTICS */}
+      {activeView === 'tagmanagement' && (
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 mt-6 shadow-sm space-y-6">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
+                <Tag className="h-5 w-5 text-indigo-600" />
+                Schlagwort-Zentrale & Interessens-Analyse
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Verwalten Sie global Blog-Tags und analysieren Sie Kundeninteressen anhand der Beitrags-Frequenz.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveView('list')}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Zurück zum Blog
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column: Recharts Frequency Visualization */}
+            <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-2xl">
+              <h3 className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase mb-4 flex items-center gap-1.5">
+                <BarChart3 className="h-4 w-4 text-indigo-500" />
+                Statistik: Themen-Interessen
+              </h3>
+
+              {(() => {
+                const tagStats = Object.entries(
+                  posts.reduce((acc: Record<string, number>, p) => {
+                    if (!p.category) return acc;
+                    p.category.split(',').forEach(tag => {
+                      const cleaned = tag.trim();
+                      if (!cleaned) return;
+                      acc[cleaned] = (acc[cleaned] || 0) + 1;
+                    });
+                    return acc;
+                  }, {})
+                )
+                  .map(([name, value]) => ({ name, value }))
+                  .sort((a, b) => b.value - a.value);
+
+                return tagStats.length > 0 ? (
+                  <>
+                    <div className="h-64 mt-2">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={tagStats} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                          <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                          <YAxis tick={{ fill: '#64748b', fontSize: 10 }} allowDecimals={false} />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '11px' }}
+                            labelStyle={{ fontWeight: 'bold' }}
+                          />
+                          <Bar dataKey="value" fill="#4f46e5" name="Beiträge">
+                            {tagStats.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={index === 0 ? '#4f46e5' : index === 1 ? '#6366f1' : index === 2 ? '#818cf8' : '#a5b4fc'} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="mt-4 p-3.5 bg-indigo-50 text-indigo-950 border border-indigo-100 rounded-xl text-xs flex gap-2">
+                      <Sparkles className="h-4 w-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+                      <p className="leading-normal">
+                        <strong>Interessens-Tipp:</strong> Schlagworte mit hoher Frequenz wie 
+                        <span className="font-semibold text-indigo-700"> {tagStats[0]?.name || 'n.a.'} </span> oder 
+                        <span className="font-semibold text-indigo-700"> {tagStats[1]?.name || 'n.a.'} </span> spiegeln die aktuellen Schwerpunkte wider und binden Kunden wissenschaftlich effektiver ein.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-slate-400 text-xs">
+                    Keine Schlagworte vorhanden. Erstellen Sie Beiträge, um Daten zu erfassen.
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Right Column: Manage Tags / Action Form & Key Term List */}
+            <div className="space-y-6">
+              {/* Register a tag */}
+              <div className="p-5 border border-slate-200/60 rounded-2xl space-y-3">
+                <h3 className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase flex items-center gap-1">
+                  <Plus className="h-3.5 w-3.5 text-slate-500" /> Neues Schlagwort registrieren
+                </h3>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Prävention, Finanzen, etc..."
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500"
+                  />
+                  <button
+                    onClick={() => handleCreateTag(newTagName)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl cursor-pointer"
+                  >
+                    Registrieren
+                  </button>
+                </div>
+              </div>
+
+              {/* Tag Cloud & Management Table */}
+              <div className="p-5 border border-slate-200/60 rounded-2xl">
+                {(() => {
+                  const tagStats = Object.entries(
+                    posts.reduce((acc: Record<string, number>, p) => {
+                      if (!p.category) return acc;
+                      p.category.split(',').forEach(tag => {
+                        const cleaned = tag.trim();
+                        if (!cleaned) return;
+                        acc[cleaned] = (acc[cleaned] || 0) + 1;
+                      });
+                      return acc;
+                    }, {})
+                  )
+                    .map(([name, value]) => ({ name, value }))
+                    .sort((a, b) => b.value - a.value);
+
+                  return (
+                    <>
+                      <h3 className="text-xs font-bold font-mono tracking-wider text-slate-400 uppercase mb-3">
+                        Registrierte Schlagworte ({tagStats.length})
+                      </h3>
+
+                      <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto pr-1">
+                        {tagStats.length > 0 ? (
+                          tagStats.map(({ name, value }) => (
+                            <div key={name} className="flex items-center justify-between py-2 text-xs">
+                              <div className="flex-1 flex items-center gap-2">
+                                <Tag className="h-3.5 w-3.5 text-indigo-500 flex-shrink-0" />
+                                {editingTag === name ? (
+                                  <div className="flex gap-1.5 items-center w-full">
+                                    <input
+                                      type="text"
+                                      value={editedTagName}
+                                      onChange={(e) => setEditedTagName(e.target.value)}
+                                      className="bg-slate-50 border border-slate-200 text-slate-800 rounded px-2 py-0.5 text-xs outline-none focus:border-indigo-500 flex-1 max-w-[150px]"
+                                    />
+                                    <button
+                                      onClick={() => handleRenameTag(name, editedTagName)}
+                                      className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                                    >
+                                      <Check className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingTag(null)}
+                                      className="p-1 text-slate-400 hover:bg-slate-50 rounded"
+                                    >
+                                      Abbrechen
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="font-semibold text-slate-700">
+                                    {name}{' '}
+                                    <span className="font-normal font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full ml-1">
+                                      {value} {value === 1 ? 'Beitrag' : 'Beiträge'}
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+
+                              {editingTag !== name && (
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      setEditingTag(name);
+                                      setEditedTagName(name);
+                                    }}
+                                    className="p-1 hover:bg-slate-100 text-slate-500 rounded cursor-pointer"
+                                    title="Schlagwort umbenennen"
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteTag(name)}
+                                    className="p-1 hover:bg-rose-50 text-rose-500 rounded cursor-pointer"
+                                    title="Schlagwort weltweit löschen"
+                                  >
+                                    <Trash className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-slate-400 text-center py-6">Keine Schlagworte aktiv registriert.</p>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

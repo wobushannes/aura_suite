@@ -1,3 +1,4 @@
+# LE Consulting - Offline CRM Portal (Lokale Einrichtung)
 
 Dieses Portal ist so konzipiert, dass es vollständig auf Ihrem eigenen Computer läuft. Da alle Berechnungen und Datenverläufe lokal in Ihrem Webbrowser (über den sogenannten `localStorage`) verschlüsselt gespeichert werden, wird keine fremde Cloud oder Datenbank benötigt.
 
@@ -12,7 +13,7 @@ Der Fehler `"Der Befehl 'vite' konnte nicht gefunden werden"` tritt auf, wenn di
 ### 1. Projekt-Verzeichnis im Terminal öffnen
 Öffnen Sie Ihre Eingabeaufforderung (CMD), Anaconda Prompt oder PowerShell und wechseln Sie in Ihr Projektverzeichnis (wo diese `package.json`-Datei liegt):
 ```bash
-cd \crm\web
+cd K:\python\scripte\crm\web
 ```
 
 ### 2. Module installieren (Zwingend notwendig!)

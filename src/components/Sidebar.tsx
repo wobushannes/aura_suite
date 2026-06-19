@@ -20,7 +20,8 @@ import {
   Truck,
   Palette,
   ShoppingBag,
-  Sliders
+  Sliders,
+  Search
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -39,6 +40,8 @@ interface SidebarProps {
   botEnabled?: boolean;
   chatEnabled?: boolean;
   siteHeaderName?: string;
+  data?: any;
+  onGlobalSearchSelect?: (tab: string, searchData: { customerSearch?: string; fileSearch?: string; chatCustomerId?: string }) => void;
 }
 
 export default function Sidebar({
@@ -56,9 +59,44 @@ export default function Sidebar({
   videosEnabled = true,
   botEnabled = true,
   chatEnabled = true,
-  siteHeaderName
+  siteHeaderName,
+  data,
+  onGlobalSearchSelect
 }: SidebarProps) {
   const isAdmin = role === 'admin';
+  const [globalSearch, setGlobalSearch] = React.useState('');
+
+  const searchResults = React.useMemo(() => {
+    if (!isAdmin || !data || globalSearch.trim().length < 2) return null;
+    const q = globalSearch.toLowerCase().trim();
+
+    // 1. Search customers
+    const matchedCustomers = (data.customers || []).filter((c: any) => 
+      c.name.toLowerCase().includes(q) || 
+      c.company.toLowerCase().includes(q) ||
+      (c.email && c.email.toLowerCase().includes(q))
+    ).slice(0, 5);
+
+    // 2. Search files
+    const matchedFiles = (data.files || []).filter((f: any) => 
+      f.name.toLowerCase().includes(q) ||
+      (f.customerName && f.customerName.toLowerCase().includes(q))
+    ).slice(0, 5);
+
+    // 3. Search messages
+    const matchedMessages = (data.messages || []).filter((m: any) => 
+      m.content && m.content.toLowerCase().includes(q)
+    ).slice(0, 5);
+
+    const hasResults = matchedCustomers.length > 0 || matchedFiles.length > 0 || matchedMessages.length > 0;
+
+    return {
+      customers: matchedCustomers,
+      files: matchedFiles,
+      messages: matchedMessages,
+      hasResults
+    };
+  }, [globalSearch, data, isAdmin]);
 
   const adminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -84,6 +122,7 @@ export default function Sidebar({
     { id: 'style-templates', label: 'Design-System', icon: Palette },
     { id: 'settings', label: 'Einstellungen', icon: Sliders },
     { id: 'templates', label: 'Roadmap-Templates', icon: Layers },
+    { id: 'communication-templates', label: 'Antwort-Vorlagen', icon: FileText },
     ...(botEnabled ? [
       { id: 'bottraining', label: 'KI-Chatbot', icon: Cpu }
     ] : []),
@@ -141,13 +180,137 @@ export default function Sidebar({
       {/* Brand & Corporate Header */}
       <div className={`p-5 border-b ${roleStyles.border} flex items-center gap-3`}>
         <div className={`w-8 h-8 ${roleStyles.logoBg} rounded-md flex items-center justify-center font-bold text-white flex-shrink-0`}>
-          K
+          A
         </div>
         <div className="min-w-0">
-          <h2 className="text-sm font-bold tracking-tight text-slate-100 leading-none truncate uppercase">{siteHeaderName || 'Kraftwerk Suite'}</h2>
+          <h2 className="text-sm font-bold tracking-tight text-slate-100 leading-none truncate uppercase">{siteHeaderName || 'Aura Suite'}</h2>
           <span className="text-[10px] text-slate-500 font-mono tracking-wider mt-0.5 block">LOCAL DATA SUITE v1.0</span>
         </div>
       </div>
+
+      {/* GLOBAL SEARCH IN SIDEBAR (Admins only) */}
+      {isAdmin && (
+        <div className="px-3.5 pt-3.5 relative">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Globale Suche..."
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              className="w-full bg-slate-800/60 border border-slate-700/60 rounded-lg pl-8 pr-7 py-2 text-xs outline-none text-slate-200 placeholder-slate-400 focus:border-indigo-505 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-sans"
+            />
+            {globalSearch && (
+              <button 
+                onClick={() => setGlobalSearch('')}
+                className="absolute right-2.5 top-2.5 text-[10px] text-slate-400 hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Search Dropdown Panel */}
+          {searchResults && (
+            <div className="absolute left-3.5 right-3.5 mt-1 bg-slate-950 border border-slate-800 text-white rounded-lg shadow-xl z-50 p-2 text-xs max-h-[380px] overflow-y-auto divide-y divide-slate-800">
+              {searchResults.hasResults ? (
+                <>
+                  {/* Customers Category */}
+                  {searchResults.customers.length > 0 && (
+                    <div className="py-2 first:pt-1">
+                      <p className="text-[10px] uppercase font-mono font-bold tracking-wider text-indigo-400 mb-1 px-1 flex items-center gap-1">
+                        <Users className="h-3 w-3 text-indigo-400" />
+                        Kunden
+                      </p>
+                      <div className="space-y-0.5">
+                        {searchResults.customers.map((c: any) => (
+                          <button
+                            key={c.id}
+                            onClick={() => {
+                              if (onGlobalSearchSelect) {
+                                onGlobalSearchSelect('customers', { customerSearch: c.name });
+                              }
+                              setGlobalSearch('');
+                            }}
+                            className="w-full text-left p-1.5 hover:bg-slate-800 rounded text-[11px] truncate block cursor-pointer transition-colors"
+                          >
+                            <span className="font-semibold text-slate-200">{c.name}</span>
+                            <span className="block text-[9px] text-slate-400">{c.company}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Files Category */}
+                  {searchResults.files.length > 0 && (
+                    <div className="py-2">
+                      <p className="text-[10px] uppercase font-mono font-bold tracking-wider text-indigo-400 mb-1 px-1 flex items-center gap-1">
+                        <FolderOpen className="h-3 w-3 text-indigo-400" />
+                        Dokumente
+                      </p>
+                      <div className="space-y-0.5">
+                        {searchResults.files.map((f: any) => (
+                          <button
+                            key={f.id}
+                            onClick={() => {
+                              if (onGlobalSearchSelect) {
+                                onGlobalSearchSelect('files', { fileSearch: f.name });
+                              }
+                              setGlobalSearch('');
+                            }}
+                            className="w-full text-left p-1.5 hover:bg-slate-800 rounded text-[11px] truncate block cursor-pointer transition-colors"
+                          >
+                            <span className="font-semibold text-slate-200">{f.name}</span>
+                            <span className="block text-[9px] text-slate-400">{f.customerName}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Messages Category */}
+                  {searchResults.messages.length > 0 && (
+                    <div className="py-2 last:pb-1">
+                      <p className="text-[10px] uppercase font-mono font-bold tracking-wider text-indigo-400 mb-1 px-1 flex items-center gap-1">
+                        <MessageSquare className="h-3 w-3 text-indigo-400" />
+                        Nachrichten (DMs)
+                      </p>
+                      <div className="space-y-0.5">
+                        {searchResults.messages.map((m: any) => {
+                          const customerId = m.senderId === 'admin' ? m.receiverId : m.senderId;
+                          const cust = data.customers?.find((c: any) => c.id === customerId);
+                          return (
+                            <button
+                              key={m.id}
+                              onClick={() => {
+                                if (onGlobalSearchSelect) {
+                                  onGlobalSearchSelect('messages', { chatCustomerId: customerId });
+                                }
+                                setGlobalSearch('');
+                              }}
+                              className="w-full text-left p-1.5 hover:bg-slate-800 rounded text-[11px] truncate block cursor-pointer transition-colors"
+                            >
+                              <span className="font-semibold text-slate-200 block truncate">"{m.content}"</span>
+                              <span className="text-[9px] text-slate-400 block mt-0.5">
+                                Chat mit {cust ? cust.name : 'Unbekannt'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="p-3 text-center text-slate-400 text-xs">
+                  Keine Ergebnisse gefunden.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* User Information Display Card - High Density Compact */}
       <div className={`p-3.5 mx-3.5 my-3 bg-slate-800/40 rounded-lg border ${roleStyles.border}`}>

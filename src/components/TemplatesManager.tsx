@@ -1,7 +1,22 @@
 import React, { useState } from 'react';
 import { STYLE_TEMPLATES, StyleTemplate } from '../styleTemplates';
 import { CRMData } from '../types';
-import { Sparkles, CheckCircle2, ChevronRight, RefreshCw, Palette, Layers, AlertCircle, Bookmark } from 'lucide-react';
+import { 
+  Sparkles, 
+  CheckCircle2, 
+  ChevronRight, 
+  RefreshCw, 
+  Palette, 
+  Layers, 
+  AlertCircle, 
+  Bookmark,
+  Eye,
+  EyeOff,
+  GripVertical,
+  Sliders,
+  Power,
+  Info 
+} from 'lucide-react';
 
 interface TemplatesManagerProps {
   data: CRMData;
@@ -17,9 +32,9 @@ export default function TemplatesManager({ data, onDataChange, logAction, active
     gdprLoggingEnabled: true,
     shopEnabled: true,
     blogEnabled: true,
-    companyName: 'Kraftwerk Enterprise Solutions',
+    companyName: 'Aura Enterprise Solutions',
     companyAddress: 'Hauptstr. 45, 80331 München, Germany',
-    companyEmail: 'billing@kraftwerk-suite.de',
+    companyEmail: 'billing@aura-suite.de',
     companyPhone: '+49 89 20304050',
     iban: 'DE89 3704 0044 0532 9901 02',
     bic: 'SOLODEM1XXX',
@@ -27,6 +42,72 @@ export default function TemplatesManager({ data, onDataChange, logAction, active
   };
 
   const currentTemplateId = settings.activeTemplateId;
+
+  // --- HOMEPAGE DRAG & DROP & LAYOUT MODUS STATES ---
+  const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
+  const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
+
+  const handleDragStart = (id: string) => {
+    setDraggedWidgetId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (draggedWidgetId && draggedWidgetId !== id) {
+      setDragOverWidgetId(id);
+    }
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (!draggedWidgetId || draggedWidgetId === targetId) return;
+    
+    const currentOrder = [...(settings.publicWidgetsOrder || ['hero', 'modules', 'advantages', 'blogTeaser'])];
+    const draggedIndex = currentOrder.indexOf(draggedWidgetId);
+    const targetIndex = currentOrder.indexOf(targetId);
+    
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      currentOrder.splice(draggedIndex, 1);
+      currentOrder.splice(targetIndex, 0, draggedWidgetId);
+      
+      onDataChange({
+        ...data,
+        settings: {
+          ...settings,
+          publicWidgetsOrder: currentOrder
+        }
+      });
+      logAction('Homepage Widgets sortiert', `Reihenfolge: ${currentOrder.join(' → ')}`);
+    }
+    
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
+  };
+
+  const handleToggleVisibility = (id: string) => {
+    const currentVisibility = { ...(settings.publicWidgetsVisibility || { hero: true, modules: true, advantages: true, blogTeaser: true }) };
+    currentVisibility[id] = currentVisibility[id] !== false ? false : true;
+
+    onDataChange({
+      ...data,
+      settings: {
+        ...settings,
+        publicWidgetsVisibility: currentVisibility
+      }
+    });
+    logAction('Homepage Widget-Sichtbarkeit geändert', `${id} ist nun ${currentVisibility[id] ? 'Sichtbar' : 'Ausgeblendet'}`);
+  };
+
+  const handleToggleLayoutModus = () => {
+    const nextVal = !settings.publicLayoutModusEnabled;
+    onDataChange({
+      ...data,
+      settings: {
+        ...settings,
+        publicLayoutModusEnabled: nextVal
+      }
+    });
+    logAction('Layout-Modus geändert', `Der Layout-Modus für das öffentliche Frontend wurde ${nextVal ? 'aktiviert' : 'deaktiviert'}.`);
+  };
 
   const handleSelectTemplate = (templateId: string, templateName: string) => {
     const updatedSettings = {
@@ -152,6 +233,129 @@ export default function TemplatesManager({ data, onDataChange, logAction, active
             </div>
           );
         })}
+      </div>
+
+      {/* --- PUBLIC FRONTEND LAYOUT CUSTOMIZATION LAYER --- */}
+      <div className="bg-slate-900 text-white rounded-3xl border border-indigo-950 p-6 space-y-6 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-indigo-950/60">
+          <div className="space-y-1">
+            <h2 className="text-base font-extrabold font-sans text-white tracking-tight flex items-center gap-2">
+              <Sliders className="h-5 w-5 text-indigo-400" />
+              Öffentliches Frontend: Homepage Layout-Modus
+            </h2>
+            <p className="text-xs text-slate-400 max-w-xl font-sans">
+              Aktivieren Sie den Layout-Modus, um die Anordnung und Sichtbarkeit der Homepage-Widgets komplett selbst per Drag-and-Drop zu steuern.
+            </p>
+          </div>
+
+          {/* Toggle Button */}
+          <button
+            type="button"
+            onClick={handleToggleLayoutModus}
+            className={`px-4 py-2 rounded-xl text-xs font-bold font-sans tracking-wide col-span-1 border flex items-center gap-2 transition-all cursor-pointer ${
+              settings.publicLayoutModusEnabled
+                ? 'bg-indigo-650 hover:bg-indigo-700 text-white border-indigo-600 shadow-md shadow-indigo-700/10'
+                : 'bg-slate-800 hover:bg-slate-800 text-slate-400 border-slate-700'
+            }`}
+          >
+            <Power className={`w-4 h-4 ${settings.publicLayoutModusEnabled ? 'text-emerald-400' : 'text-slate-500'}`} />
+            <span>Layout-Modus: {settings.publicLayoutModusEnabled ? 'AKTIVIERT' : 'DEAKTIVIERT'}</span>
+          </button>
+        </div>
+
+        {/* Informative Box if Deactivated */}
+        {!settings.publicLayoutModusEnabled && (
+          <div className="p-3.5 bg-slate-800/40 border border-slate-800 rounded-2xl flex gap-3 text-xs text-slate-400 leading-normal font-sans">
+            <Info className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+            <p>
+              Derzeit ist das <strong>standardmäßige statische Layout</strong> auf der Homepage aktiv. Wenn Sie den Layout-Modus aktivieren, überschreibt Ihre eigens gestaltete widgetspezifische Reihenfolge und Einblendung das Standard-Layout.
+            </p>
+          </div>
+        )}
+
+        {/* Drag-and-Drop Editor Canvas */}
+        <div className="space-y-3.5">
+          <span className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-slate-500 block">
+            Anordnung & Sichtbarkeit der Sektionen auf der Homepage:
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {(settings.publicWidgetsOrder || ['hero', 'modules', 'advantages', 'blogTeaser']).map((widgetId, index) => {
+              const isVisible = (settings.publicWidgetsVisibility || { hero: true, modules: true, advantages: true, blogTeaser: true })[widgetId] !== false;
+              let title = '';
+              let desc = '';
+              if (widgetId === 'hero') {
+                title = '1. Hero-Banner';
+                desc = 'Haupt-Begrüßungstext, Slogan und Button-Verweise.';
+              } else if (widgetId === 'modules') {
+                title = '2. Modul-Status Grid';
+                desc = 'Das Gitter mit aktuellen Statusanzeigen der Suite-Module.';
+              } else if (widgetId === 'advantages') {
+                title = '3. Systemvorteile Block';
+                desc = 'Vorteile wie E2E, DSGVO und Rechtstexte.';
+              } else if (widgetId === 'blogTeaser') {
+                title = '4. Blog-Artikel Teaser';
+                desc = 'Die 3 neuesten verfassten Blogeinträge.';
+              }
+
+              return (
+                <div
+                  key={widgetId}
+                  draggable
+                  onDragStart={() => handleDragStart(widgetId)}
+                  onDragOver={(e) => handleDragOver(e, widgetId)}
+                  onDrop={() => handleDrop(widgetId)}
+                  className={`p-4 rounded-2xl border transition-all flex flex-col justify-between cursor-grab active:cursor-grabbing select-none relative ${
+                    isVisible
+                      ? 'bg-slate-850 border-indigo-500/20 hover:border-indigo-500/40'
+                      : 'bg-slate-900/50 border-slate-800 hover:border-slate-800 opacity-50'
+                  } ${
+                    dragOverWidgetId === widgetId ? 'border-yellow-400 scale-[1.01]' : ''
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 font-sans font-bold text-xs text-white min-w-0">
+                        <GripVertical className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+                        <span className="truncate">{title}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleVisibility(widgetId)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer outline-none ${
+                          isVisible ? 'text-indigo-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-850'
+                        }`}
+                        title={isVisible ? 'Sektion ausblenden' : 'Sektion einblenden'}
+                      >
+                        {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+                    </div>
+
+                    <p className="text-[10px] text-slate-400 leading-normal font-sans">
+                      {desc}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 mt-3 border-t border-slate-800/60 flex items-center justify-between font-mono text-[9px] text-slate-500">
+                    <span>Reihenfolge: #{index + 1}</span>
+                    <span className={isVisible ? 'text-indigo-400 font-bold' : 'text-rose-500 font-semibold'}>
+                      {isVisible ? 'SICHTBAR' : 'STUMM'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="text-[10px] text-slate-500 leading-normal font-sans bg-slate-950/40 p-3 rounded-xl border border-indigo-950/40 flex items-start gap-2 select-none">
+          <Sparkles className="w-3.5 h-3.5 text-yellow-500/80 flex-shrink-0 mt-0.5" />
+          <p>
+            <strong>Echtzeit-Synchronisation:</strong> Die Änderungen werden ohne Neuladen wirksam. Sie können ein neues Browser-Tab mit dem öffentlichen Frontend öffnen oder in die Livevorschau wechseln, um die Anordnung sofort zu bewundern.
+          </p>
+        </div>
       </div>
     </div>
   );

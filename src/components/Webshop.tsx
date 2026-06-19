@@ -56,7 +56,16 @@ export default function Webshop({ customer, data, onDataChange, logAction, activ
   // Cart Mechanics
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-  const shippingFlat = 4.90;
+  
+  // Tax & Shipping parameters configured in settings
+  const shopTaxRate = data.settings?.shopTaxRate ?? 19;
+  const shopShippingFlat = data.settings?.shopShippingFlat ?? 4.90;
+  const shopFreeShippingThreshold = data.settings?.shopFreeShippingThreshold;
+  const shopDefaultCarrier = data.settings?.shopDefaultCarrier || 'DHL';
+
+  // Shipping cost after free shipping threshold check
+  const isFreeShipping = typeof shopFreeShippingThreshold === 'number' && shopFreeShippingThreshold > 0 && cartSubtotal >= shopFreeShippingThreshold;
+  const shippingFlat = isFreeShipping ? 0 : shopShippingFlat;
   const totalAmount = cartSubtotal + shippingFlat;
 
   const handleAddToCart = (product: Product) => {
@@ -120,7 +129,7 @@ export default function Webshop({ customer, data, onDataChange, logAction, activ
 
     // Create connected invoice
     const invoiceNum = `RE-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const net = Number((totalAmount / 1.19).toFixed(2));
+    const net = Number((totalAmount / (1 + shopTaxRate / 100)).toFixed(2));
     const tax = Number((totalAmount - net).toFixed(2));
 
     const newInvoice: Invoice = {
@@ -131,7 +140,7 @@ export default function Webshop({ customer, data, onDataChange, logAction, activ
       amount: Number(totalAmount.toFixed(2)),
       taxAmount: tax,
       netAmount: net,
-      taxRate: 19,
+      taxRate: shopTaxRate,
       issueDate: new Date().toISOString().substring(0, 10),
       dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().substring(0, 10), // 14 days net
       status: 'Offen',
@@ -613,12 +622,18 @@ export default function Webshop({ customer, data, onDataChange, logAction, activ
                     <span className="font-mono">{cartSubtotal.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
                   </div>
                   <div className="flex justify-between text-slate-500">
-                    <span>Standardpaket Versand</span>
-                    <span className="font-mono">{shippingFlat.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
+                    <span>Versand ({shopDefaultCarrier})</span>
+                    <span className="font-mono">
+                      {isFreeShipping ? (
+                        <span className="text-emerald-600 font-bold">KOSTENFREI</span>
+                      ) : (
+                        shippingFlat.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+                      )}
+                    </span>
                   </div>
                   <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                    <span>Darin enthaltene 19% MwSt.</span>
-                    <span>{(totalAmount - (totalAmount / 1.19)).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
+                    <span>Darin enthaltene {shopTaxRate}% MwSt.</span>
+                    <span>{(totalAmount - (totalAmount / (1 + shopTaxRate / 100))).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
                   </div>
                   <div className="flex justify-between text-slate-800 font-bold text-sm pt-2 border-t border-slate-200/50">
                     <span>Gesamtsumme Brutto</span>

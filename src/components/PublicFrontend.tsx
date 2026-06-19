@@ -20,7 +20,11 @@ import {
   Trash2,
   CheckCircle2,
   MessageSquare,
-  Scale
+  Scale,
+  GripVertical,
+  Sliders,
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 
 interface PublicFrontendProps {
@@ -29,6 +33,8 @@ interface PublicFrontendProps {
   onOpenLogin: () => void;
   isAdminPreview?: boolean;
   onClosePreview?: () => void;
+  session?: any;
+  onLogout?: () => void;
 }
 
 export default function PublicFrontend({ 
@@ -36,7 +42,9 @@ export default function PublicFrontend({
   onDataChange, 
   onOpenLogin, 
   isAdminPreview = false,
-  onClosePreview 
+  onClosePreview,
+  session,
+  onLogout
 }: PublicFrontendProps) {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'home' | 'shop' | 'blog' | 'impressum' | 'datenschutz'>('home');
@@ -90,6 +98,61 @@ export default function PublicFrontend({
       .filter(p => p.status === 'Published')
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [data.blogPosts]);
+
+  // --- STATE FOR PUBLIC FRONTEND WIDGETS DRAG & DROP & VISIBILITY ---
+  const [showPublicLayoutCustomizer, setShowPublicLayoutCustomizer] = useState(false);
+  const [localPublicDraggedWidgetId, setLocalPublicDraggedWidgetId] = useState<string | null>(null);
+  const [localPublicDragOverWidgetId, setLocalPublicDragOverWidgetId] = useState<string | null>(null);
+
+  const handlePublicWidgetDragStart = (id: string) => {
+    setLocalPublicDraggedWidgetId(id);
+  };
+
+  const handlePublicWidgetDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (localPublicDraggedWidgetId && localPublicDraggedWidgetId !== id) {
+      setLocalPublicDragOverWidgetId(id);
+    }
+  };
+
+  const handlePublicWidgetDrop = (targetId: string) => {
+    if (!localPublicDraggedWidgetId || localPublicDraggedWidgetId === targetId) return;
+    
+    const currentOrder = [...(data.settings?.publicWidgetsOrder || ['hero', 'modules', 'advantages', 'blogTeaser'])];
+    const draggedIndex = currentOrder.indexOf(localPublicDraggedWidgetId);
+    const targetIndex = currentOrder.indexOf(targetId);
+    
+    if (draggedIndex !== -1 && targetIndex !== -1) {
+      // Reorder
+      currentOrder.splice(draggedIndex, 1);
+      currentOrder.splice(targetIndex, 0, localPublicDraggedWidgetId);
+      
+      onDataChange((prev: CRMData) => ({
+        ...prev,
+        settings: {
+          ...(prev.settings || {} as any),
+          publicWidgetsOrder: currentOrder,
+        }
+      }));
+    }
+    
+    setLocalPublicDraggedWidgetId(null);
+    setLocalPublicDragOverWidgetId(null);
+  };
+
+  const handleTogglePublicWidgetVisibility = (id: string) => {
+    const currentVisibility = { ...(data.settings?.publicWidgetsVisibility || { hero: true, modules: true, advantages: true, blogTeaser: true }) };
+    const nextVal = currentVisibility[id] === false; // toggle
+    currentVisibility[id] = nextVal;
+
+    onDataChange((prev: CRMData) => ({
+      ...prev,
+      settings: {
+        ...(prev.settings || {} as any),
+        publicWidgetsVisibility: currentVisibility,
+      }
+    }));
+  };
 
   // Cart functions
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
@@ -287,19 +350,37 @@ export default function PublicFrontend({
       
       {/* 1. ADMIN PREVIEW BAR */}
       {isAdminPreview && (
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 text-white px-6 py-2.5 flex items-center justify-between text-xs font-bold font-sans shadow-md z-50 sticky top-0">
+        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 text-white px-6 py-2.5 flex flex-wrap gap-2 items-center justify-between text-xs font-bold font-sans shadow-md z-50 sticky top-0">
           <div className="flex items-center gap-3">
             <span className="px-2 py-0.5 bg-yellow-400 text-slate-900 font-mono text-[9px] rounded font-extrabold uppercase animate-pulse">Livevorschau</span>
             <span>Sie betrachten das öffentliche Frontend der <strong>{data.settings?.companyName || 'AeroCMS Enterprise Suite'}</strong></span>
           </div>
-          {onClosePreview && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={onClosePreview}
-              className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-950 border border-slate-800 text-white text-[10px] uppercase font-mono tracking-wider rounded-lg transition-all cursor-pointer"
+              type="button"
+              onClick={() => {
+                setActiveTab('home');
+                setSelectedPost(null);
+                setShowPublicLayoutCustomizer(!showPublicLayoutCustomizer);
+              }}
+              className={`px-3 py-1.5 rounded-lg border text-[10px] uppercase font-mono font-bold tracking-wider flex items-center gap-1.5 transition-all cursor-pointer select-none outline-none ${
+                showPublicLayoutCustomizer
+                  ? 'bg-yellow-400 text-slate-900 border-yellow-500 shadow-sm'
+                  : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+              }`}
             >
-              ← Admin-Zentrale schliessen
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Startseite Widgets anpassen</span>
             </button>
-          )}
+            {onClosePreview && (
+              <button
+                onClick={onClosePreview}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-950 border border-slate-800 text-white text-[10px] uppercase font-mono tracking-wider rounded-lg transition-all cursor-pointer"
+              >
+                ← Admin-Zentrale schliessen
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -385,201 +466,429 @@ export default function PublicFrontend({
             </button>
           )}
           
-          <button
-            onClick={onOpenLogin}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-          >
-            <Lock className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Kunden-Portal / Login</span>
-          </button>
+          {session ? (
+            <div className="flex items-center gap-2.5">
+              <div className="hidden sm:flex flex-col text-right font-sans">
+                <span className="text-[10px] text-slate-400 leading-none">Angemeldet</span>
+                <span className="text-xs font-bold text-slate-850 truncate max-w-[140px]" title={session.displayName}>
+                  {session.displayName}
+                </span>
+              </div>
+              <button
+                onClick={onOpenLogin}
+                className="bg-indigo-650 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer font-sans"
+              >
+                Dashboard
+              </button>
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="bg-slate-150 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border border-slate-200 font-sans"
+                >
+                  Abmelden
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={onOpenLogin}
+              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Kunden-Portal / Login</span>
+            </button>
+          )}
         </div>
       </header>
 
       {/* 3. CORE FRONTEND GRID & MAIN DISPLAY */}
       <main className="flex-grow overflow-y-auto">
 
+        {/* PUBLIC LAYOUT CUSTOMIZER DASHBOARD (Only visible when active) */}
+        {isAdminPreview && showPublicLayoutCustomizer && (
+          <div className="bg-slate-900 border-b border-indigo-950 px-6 py-6 text-white space-y-4 animate-fade-in z-30 relative shadow-inner">
+            <div className="max-w-4xl mx-auto space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
+                  <h3 className="font-extrabold text-white text-sm tracking-tight font-sans">Echtzeit Startseiten-Customizer</h3>
+                </div>
+                <button 
+                  onClick={() => setShowPublicLayoutCustomizer(false)}
+                  className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer outline-none focus:outline-none"
+                >
+                  Ausblenden ✕
+                </button>
+              </div>
+              <p className="text-slate-400 text-xs leading-relaxed font-sans">
+                Passen Sie das Erscheinungsbild der öffentlichen Startseite an. Ziehen Sie die Elemente per <strong>Drag-and-Drop</strong> in die gewünschte Reihenfolge und schalten Sie die Sichtbarkeit mit dem Augensymbol um. Die Änderungen werden sofort live für alle Besucher angewendet.
+              </p>
+
+              {/* Drag & Drop Core Canvas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+                {(data.settings?.publicWidgetsOrder || ['hero', 'modules', 'advantages', 'blogTeaser']).map((widgetId, index) => {
+                  const isVisible = (data.settings?.publicWidgetsVisibility || { hero: true, modules: true, advantages: true, blogTeaser: true })[widgetId] !== false;
+                  let label = '';
+                  let desc = '';
+                  if (widgetId === 'hero') {
+                    label = 'Hero-Banner';
+                    desc = 'Haupt-Slogan & Company Name';
+                  } else if (widgetId === 'modules') {
+                    label = 'Modul-Status Grid';
+                    desc = 'Übersicht der aktiven Module';
+                  } else if (widgetId === 'advantages') {
+                    label = 'Systemvorteile Block';
+                    desc = 'Rechtstexte & Core Features';
+                  } else if (widgetId === 'blogTeaser') {
+                    label = 'Blog-Artikel Teaser';
+                    desc = 'Die 3 neuesten Blog-Beiträge';
+                  }
+
+                  return (
+                    <div
+                      key={widgetId}
+                      draggable
+                      onDragStart={() => handlePublicWidgetDragStart(widgetId)}
+                      onDragOver={(e) => handlePublicWidgetDragOver(e, widgetId)}
+                      onDrop={() => handlePublicWidgetDrop(widgetId)}
+                      className={`p-3 rounded-xl border transition-all text-xs flex flex-col justify-between cursor-grab active:cursor-grabbing select-none ${
+                        isVisible 
+                          ? 'bg-slate-800 border-indigo-500/30 hover:border-indigo-400' 
+                          : 'bg-slate-800/40 border-slate-800 hover:border-slate-700 opacity-60'
+                      } ${
+                        localPublicDragOverWidgetId === widgetId ? 'border-yellow-400 scale-[1.02]' : ''
+                      }`}
+                    >
+                      <div className="space-y-1.5 font-sans">
+                        <div className="flex items-center justify-between gap-1">
+                          <div className="flex items-center gap-1.5 font-bold text-white min-w-0">
+                            <GripVertical className="w-3.5 h-3.5 text-slate-500 flex-shrink-0 cursor-grab" />
+                            <span className="truncate">{label}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePublicWidgetVisibility(widgetId)}
+                            className={`p-1 rounded-md transition-colors cursor-pointer flex-shrink-0 outline-none ${
+                              isVisible ? 'text-indigo-400 hover:bg-slate-700/80' : 'text-slate-500 hover:bg-slate-800'
+                            }`}
+                            title={isVisible ? 'Widget ausblenden' : 'Widget einblenden'}
+                          >
+                            {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-400 leading-normal">{desc}</p>
+                      </div>
+
+                      <div className="pt-2.5 mt-2 border-t border-slate-700/50 flex items-center justify-between font-mono text-[9px] text-slate-500">
+                        <span>Position: #{index + 1}</span>
+                        <span className={isVisible ? 'text-emerald-400 font-bold' : 'text-rose-400 font-semibold'}>
+                          {isVisible ? 'AKTIV' : 'STUMM'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* --- STARTSEITE / HOME VIEW --- */}
         {activeTab === 'home' && (
-          <div className="animate-fade-in">
-            {/* Elegant Hero Banner */}
-            <section className="bg-slate-900 text-white py-24 px-8 relative overflow-hidden">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-950/40 via-transparent to-transparent"></div>
-              <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-                <span className="px-3 py-1 bg-white/10 border border-white/10 rounded-full font-mono text-[10px] text-indigo-300 uppercase font-black tracking-widest">
-                  Enterprise Software & CMS Lösungen
-                </span>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none text-white font-sans max-w-3xl mx-auto">
-                  Moderne Digital-Architektur. Sicher, verschlüsselt, performant.
-                </h1>
-                <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
-                  Willkommen bei <strong>{data.settings?.companyName || 'Kraftwerk Systems'}</strong>. Wir konzipieren und implementieren hochperformante Content-Management-Systeme, maßgeschneiderte Enterprise-Schnittstellen und kryptografische Kommunikations-Lösungen für anspruchsvolle Mandanten nach bestem deutschen Industrie-Standard. 
-                </p>
-                <div className="pt-6 flex flex-wrap justify-center gap-4">
-                  <button 
-                    onClick={() => {
-                      if (shopEnabled) {
-                        setActiveTab('shop');
-                      } else {
-                        setActiveTab('impressum');
-                      }
-                    }}
-                    className="px-6 py-3 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl tracking-wider uppercase flex items-center gap-2 transition-all shadow-md shadow-indigo-700/10 cursor-pointer"
-                  >
-                    <span>{shopEnabled ? 'Software-Licensing ansehen' : 'Jetzt Kontakt aufnehmen'}</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={onOpenLogin}
-                    className="px-6 py-3 bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl tracking-wider uppercase transition-all cursor-pointer"
-                  >
-                    Kunden-Zugang öffnen →
-                  </button>
-                </div>
-              </div>
-            </section>
+          <div className="animate-fade-in divide-y divide-slate-100">
+            {(() => {
+              const layoutModusActive = data.settings?.publicLayoutModusEnabled === true;
+              const widgetsOrder = layoutModusActive 
+                ? (data.settings?.publicWidgetsOrder || ['hero', 'modules', 'advantages', 'blogTeaser'])
+                : ['hero', 'modules', 'advantages', 'blogTeaser'];
 
-            {/* Core Modules Grid Showcase - showing which ones are Active/Inactive */}
-            <section className="max-w-7xl mx-auto py-16 px-6">
-              <div className="text-center space-y-2 mb-12">
-                <p className="text-[10px] font-mono tracking-widest text-indigo-600 font-bold uppercase">System-Zertifikate</p>
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">System-Zentrale: Aktueller Modul-Status</h2>
-                <p className="text-slate-500 text-xs max-w-lg mx-auto">Der Administrator schaltet Kernmodule flexibel im Backend scharf. Hier sehen Sie den Echtzeit-Modulstatus unserer Plattform.</p>
-              </div>
+              return widgetsOrder.map((widgetId) => {
+                const isVisible = layoutModusActive
+                  ? (data.settings?.publicWidgetsVisibility || { hero: true, modules: true, advantages: true, blogTeaser: true })[widgetId] !== false
+                  : true;
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                
-                {/* 1. Shopping System Card */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
-                      <ShoppingBag className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm">Kraftwerk Boutique-Shop</h3>
-                      <p className="text-slate-500 text-[11px] mt-1 leading-normal">Volldigitalisierter Software-Vertrieb & Lizenz-Erwerb mit Checkout und automatischer Rechnungsstellung.</p>
-                    </div>
+                if (!isVisible) return null;
+
+                if (widgetId === 'hero') {
+                  return (
+                    <div key="hero" className="relative group/section">
+                      {/* Visual drag indicator inside customizer */}
+                      {isAdminPreview && showPublicLayoutCustomizer && (
+                        <div className="absolute top-4 left-4 z-30 bg-yellow-400 text-slate-900 border border-yellow-500 text-[10px] font-sans font-black px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-md">
+                          <GripVertical className="w-3.5 h-3.5" />
+                          <span>Hero-Banner (Ziehbar)</span>
+                        </div>
+                      )}
+                    
+                    {/* Elegant Hero Banner */}
+                    <section className="bg-slate-900 text-white py-24 px-8 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-indigo-950/40 via-transparent to-transparent"></div>
+                      <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
+                        <span className="px-3 py-1 bg-white/10 border border-white/10 rounded-full font-mono text-[10px] text-indigo-300 uppercase font-black tracking-widest">
+                          Enterprise Software & CMS Lösungen
+                        </span>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none text-white font-sans max-w-3xl mx-auto">
+                          Moderne Digital-Architektur. Sicher, verschlüsselt, performant.
+                        </h1>
+                        <p className="text-slate-300 text-sm md:text-base leading-relaxed max-w-2xl mx-auto font-sans">
+                          Willkommen bei <strong>{data.settings?.companyName || 'Aura Systems'}</strong>. Wir konzipieren und implementieren hochperformante Content-Management-Systeme, maßgeschneiderte Enterprise-Schnittstellen und kryptografische Kommunikations-Lösungen für anspruchsvolle Mandanten nach bestem deutschen Industrie-Standard. 
+                        </p>
+                        <div className="pt-6 flex flex-wrap justify-center gap-4">
+                          <button 
+                            onClick={() => {
+                              if (shopEnabled) {
+                                setActiveTab('shop');
+                              } else {
+                                setActiveTab('impressum');
+                              }
+                            }}
+                            className="px-6 py-3 bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl tracking-wider uppercase flex items-center gap-2 transition-all shadow-md shadow-indigo-700/10 cursor-pointer outline-none"
+                          >
+                            <span>{shopEnabled ? 'Software-Licensing ansehen' : 'Jetzt Kontakt aufnehmen'}</span>
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={onOpenLogin}
+                            className="px-6 py-3 bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl tracking-wider uppercase transition-all cursor-pointer outline-none"
+                          >
+                            Kunden-Zugang öffnen →
+                          </button>
+                        </div>
+                      </div>
+                    </section>
                   </div>
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
-                    {shopEnabled ? (
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
+                );
+              }
+
+              if (widgetId === 'modules') {
+                return (
+                  <div key="modules" className="relative group/section">
+                    {/* Visual drag indicator inside customizer */}
+                    {isAdminPreview && showPublicLayoutCustomizer && (
+                      <div className="absolute top-4 left-4 z-30 bg-yellow-400 text-slate-900 border border-yellow-500 text-[10px] font-sans font-black px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-md">
+                        <GripVertical className="w-3.5 h-3.5" />
+                        <span>Modul-Status Grid (Ziehbar)</span>
+                      </div>
+                    )}
+
+                    {/* Core Modules Grid Showcase - showing which ones are Active/Inactive */}
+                    <section className="max-w-7xl mx-auto py-16 px-6">
+                      <div className="text-center space-y-2 mb-12">
+                        <p className="text-[10px] font-mono tracking-widest text-indigo-600 font-bold uppercase">System-Zertifikate</p>
+                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">System-Zentrale: Aktueller Modul-Status</h2>
+                        <p className="text-slate-500 text-xs max-w-lg mx-auto">Der Administrator schaltet Kernmodule flexibel im Backend scharf. Hier sehen Sie den Echtzeit-Modulstatus unserer Plattform.</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        
+                        {/* 1. Shopping System Card */}
+                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
+                              <ShoppingBag className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-sm">Aura Boutique-Shop</h3>
+                              <p className="text-slate-500 text-[11px] mt-1 leading-normal">Volldigitalisierter Software-Vertrieb & Lizenz-Erwerb mit Checkout und automatischer Rechnungsstellung.</p>
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
+                            {shopEnabled ? (
+                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 2. Blog News */}
+                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
+                              <BookOpen className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-sm">Leitfäden & Abonnenten-Blog</h3>
+                              <p className="text-slate-500 text-[11px] mt-1 leading-normal">Expertenberichte, Systemdokumente und Profi-Anleitungen direkt aus unserer Redaktion mit Kommentarfunktion.</p>
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
+                            {blogEnabled ? (
+                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 3. AI Assistant */}
+                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
+                              <Cpu className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-sm">KI-Bot Trainingssystem</h3>
+                              <p className="text-slate-500 text-[11px] mt-1 leading-normal">Integrierte künstliche Intelligenz, die häufige Kundenfragen selbstständig lernt und im FAQ-Stil auflöst.</p>
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
+                            {data.settings?.botEnabled !== false ? (
+                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 4. Safe Chat Encrypted */}
+                        <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-slate-900 text-sm">Ende-zu-Ende Safe Chat</h3>
+                              <p className="text-slate-500 text-[11px] mt-1 leading-normal">Kryptografisch gesicherte Chaträume mit AES-AES 256 Algorithmen halten DMs absolut vertraulich.</p>
+                            </div>
+                          </div>
+                          <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
+                            {data.settings?.chatEnabled !== false ? (
+                              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    </section>
+                  </div>
+                );
+              }
+
+              if (widgetId === 'advantages') {
+                return (
+                  <div key="advantages" className="relative group/section">
+                    {/* Visual drag indicator inside customizer */}
+                    {isAdminPreview && showPublicLayoutCustomizer && (
+                      <div className="absolute top-4 left-4 z-30 bg-yellow-400 text-slate-900 border border-yellow-500 text-[10px] font-sans font-black px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-md">
+                        <GripVertical className="w-3.5 h-3.5" />
+                        <span>Systemvorteile Block (Ziehbar)</span>
+                      </div>
+                    )}
+
+                    {/* Why AeroCMS block */}
+                    <section className="bg-white border-t border-slate-200 py-16 px-6">
+                      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                        <div className="space-y-5">
+                          <span className="text-indigo-600 font-bold text-xs uppercase font-mono px-2.5 py-1 bg-indigo-50 rounded">Systemvorteile</span>
+                          <h3 className="text-2xl font-bold tracking-tight text-slate-900">Ausfallsicher, gesetzeskonform & flexibel</h3>
+                          <p className="text-slate-500 text-xs leading-relaxed font-sans">
+                            Unsere Kernentwicklung folgt dem Prinzip der Datensparsamkeit. Während andere Systeme vertrauliche Mandantendaten ungeschützt auf Drittanbieter-Cloud-Server senden, bündelt die Aura Suite alle Workflows in einer sicheren, offline-fähigen Offline-Zentrale. 
+                          </p>
+                          <ul className="space-y-3.5 text-xs text-slate-700 font-sans">
+                            <li className="flex items-center gap-2.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                              <span>Volle E2E-Verschlüsselung sensibler Nachrichten-Uploads</span>
+                            </li>
+                            <li className="flex items-center gap-2.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                              <span>Live-Datenexport nach Art. 15 DSGVO integriert</span>
+                            </li>
+                            <li className="flex items-center gap-2.5">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                              <span>Echtzeit-Synchronisierung bei bestehender Online-Verbindung</span>
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="p-8 bg-slate-50 border border-slate-200 rounded-3xl space-y-6">
+                          <h4 className="font-bold text-slate-900 text-base flex items-center gap-2 font-sans">
+                            <Scale className="w-5 h-5 text-indigo-600" />
+                            Rechtliche Rahmenausstattung
+                          </h4>
+                          <p className="text-slate-500 text-[11px] leading-relaxed font-sans">
+                            Wir garantieren eine vollständig DSGVO-konforme Architektur. Die Speicherung von Kundendatenbanksystemen ist herstellerunabhängig gesichert. Für detaillierte Bestimmungen oder um einen rechtssicheren Signaturvorgang einzusehen, loggen Sie sich einfach mit Ihren Mandantendaten im Portal ein.
+                          </p>
+                          <div className="flex gap-4">
+                            <button onClick={() => setActiveTab('impressum')} className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer outline-none">
+                              <span>Impressum sichten</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => setActiveTab('datenschutz')} className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer outline-none">
+                              <span>Datenschutz sichten</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                );
+              }
+
+              if (widgetId === 'blogTeaser') {
+                return (
+                  <div key="blogTeaser" className="relative group/section">
+                    {/* Visual drag indicator inside customizer */}
+                    {isAdminPreview && showPublicLayoutCustomizer && (
+                      <div className="absolute top-4 left-4 z-30 bg-yellow-400 text-slate-900 border border-yellow-500 text-[10px] font-sans font-black px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-md">
+                        <GripVertical className="w-3.5 h-3.5" />
+                        <span>Blog-Artikel Teaser (Ziehbar)</span>
+                      </div>
+                    )}
+
+                    {/* Blog News Teaser */}
+                    {blogEnabled && publishedPosts.length > 0 && (
+                      <section className="bg-slate-50 border-t border-slate-200 py-16 px-6">
+                        <div className="max-w-7xl mx-auto space-y-10">
+                          <div className="text-center space-y-2">
+                            <p className="text-[10px] font-mono tracking-widest text-indigo-600 font-bold uppercase">Letzte Neuigkeiten</p>
+                            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Aktuelles aus unserem Blog</h2>
+                            <p className="text-slate-500 text-xs max-w-lg mx-auto">Die neuesten Entwicklungen, Feature-Releases und Systemanleitungen unseres Serviceteams.</p>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {publishedPosts.slice(0, 3).map((post) => (
+                              <div 
+                                key={post.id} 
+                                onClick={() => {
+                                  setSelectedPost(post);
+                                  setActiveTab('blog');
+                                }}
+                                className="bg-white border border-slate-200/95 duration-200 hover:border-indigo-400/50 hover:shadow-md cursor-pointer rounded-2xl p-5 flex flex-col justify-between transition-all"
+                              >
+                                <div className="space-y-3 font-sans">
+                                  <div className="flex gap-2 items-center text-[10px] font-mono font-bold text-indigo-600 uppercase">
+                                    <span>{post.category}</span>
+                                    <span>•</span>
+                                    <span>{new Date(post.createdAt).toLocaleDateString('de-DE')}</span>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-bold text-slate-900 text-sm line-clamp-1">{post.title}</h3>
+                                    <p className="text-slate-500 text-xs line-clamp-2 mt-1.5 leading-relaxed">{post.summary}</p>
+                                  </div>
+                                </div>
+                                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-indigo-600 text-xs font-bold font-mono">
+                                  <span>Weiterlesen →</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </section>
                     )}
                   </div>
-                </div>
+                );
+              }
 
-                {/* 2. Blog News */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
-                      <BookOpen className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm">Leitfäden & Abonnenten-Blog</h3>
-                      <p className="text-slate-500 text-[11px] mt-1 leading-normal">Expertenberichte, Systemdokumente und Profi-Anleitungen direkt aus unserer Redaktion mit Kommentarfunktion.</p>
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
-                    {blogEnabled ? (
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. AI Assistant */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
-                      <Cpu className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm">KI-Bot Trainingssystem</h3>
-                      <p className="text-slate-500 text-[11px] mt-1 leading-normal">Integrierte künstliche Intelligenz, die häufige Kundenfragen selbstständig lernt und im FAQ-Stil auflöst.</p>
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
-                    {data.settings?.botEnabled !== false ? (
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Safe Chat Encrypted */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm space-y-4 hover:border-indigo-500/20 transition-all flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="w-10 h-10 bg-indigo-55 px-2.5 rounded-lg flex items-center justify-center text-indigo-600">
-                      <ShieldCheck className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm">Ende-zu-Ende Safe Chat</h3>
-                      <p className="text-slate-500 text-[11px] mt-1 leading-normal">Kryptografisch gesicherte Chaträume mit AES-AES 256 Algorithmen halten DMs absolut vertraulich.</p>
-                    </div>
-                  </div>
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase font-bold tracking-wider text-slate-400">STATUS:</span>
-                    {data.settings?.chatEnabled !== false ? (
-                      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded-full text-[9px] border border-emerald-150 tracking-wider font-mono">AKTIV</span>
-                    ) : (
-                      <span className="px-2.5 py-0.5 bg-slate-100 text-slate-400 font-medium rounded-full text-[9px] tracking-wider font-mono">INAKTIV</span>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-            </section>
-
-            {/* Why AeroCMS block */}
-            <section className="bg-white border-t border-slate-200 py-16 px-6">
-              <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                <div className="space-y-5">
-                  <span className="text-indigo-600 font-bold text-xs uppercase font-mono px-2.5 py-1 bg-indigo-50 rounded">Systemvorteile</span>
-                  <h3 className="text-2xl font-bold tracking-tight text-slate-900">Ausfallsicher, gesetzeskonform & flexibel</h3>
-                  <p className="text-slate-500 text-xs leading-relaxed">
-                    Unsere Kernentwicklung folgt dem Prinzip der Datensparsamkeit. Während andere Systeme vertrauliche Mandantendaten ungeschützt auf Drittanbieter-Cloud-Server senden, bündelt die Kraftwerk Suite alle Workflows in einer sicheren, offline-fähigen Offline-Zentrale. 
-                  </p>
-                  <ul className="space-y-3.5 text-xs text-slate-700">
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span>Volle E2E-Verschlüsselung sensibler Nachrichten-Uploads</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span>Live-Datenexport nach Art. 15 DSGVO integriert</span>
-                    </li>
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span>Echtzeit-Synchronisierung bei bestehender Online-Verbindung</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="p-8 bg-slate-50 border border-slate-200 rounded-3xl space-y-6">
-                  <h4 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                    <Scale className="w-5 h-5 text-indigo-600" />
-                    Rechtliche Rahmenausstattung
-                  </h4>
-                  <p className="text-slate-500 text-[11px] leading-relaxed">
-                    Wir garantieren eine vollständig DSGVO-konforme Architektur. Die Speicherung von Kundendatenbanksystemen ist herstellerunabhängig gesichert. Für detaillierte Bestimmungen oder um einen rechtssicheren Signaturvorgang einzusehen, loggen Sie sich einfach mit Ihren Mandantendaten im Portal ein.
-                  </p>
-                  <div className="flex gap-4">
-                    <button onClick={() => setActiveTab('impressum')} className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer">
-                      <span>Impressum sichten</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => setActiveTab('datenschutz')} className="text-indigo-600 hover:text-indigo-700 font-bold text-xs flex items-center gap-1.5 cursor-pointer">
-                      <span>Datenschutz sichten</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
+              return null;
+            });
+            })()}
           </div>
         )}
 
